@@ -21,7 +21,14 @@ def load_pokec_data(suffix: str = ""):
     columns.remove(predict_attr)
 
     features = df[columns].values
-    labels = df[predict_attr].values
+
+    # Normalize features to have mean 0 and std 1
+    # TODO: very slight data leakage here, but it's not a big deal
+    features = (features - features.mean(axis=0)) / features.std(axis=0)
+
+    # TODO: invesigate what labels mean, why there are 5 or 6 of them
+    # Ranges from -1 to 3 for pokec_z, -1 to 4 for pokec_n
+    labels = df[predict_attr].values + 1
     sens_attrs = df[sens_attr].values.reshape(-1, 1)
 
     idx = np.array(df["user_id"], dtype=int)
@@ -33,7 +40,12 @@ def load_pokec_data(suffix: str = ""):
         list(map(idx_map.get, edge_unordered.flatten())), dtype=int
     ).reshape(edge_unordered.shape)
 
-    data = Data(x=features, edge_index=edges.T, y=labels, sens_attrs=sens_attrs)
+    data = Data(
+        x=torch.from_numpy(features),
+        edge_index=torch.from_numpy(edges.T),
+        y=torch.from_numpy(labels),
+        sens_attrs=torch.from_numpy(sens_attrs),
+    )
     return data
 
 
@@ -79,21 +91,13 @@ class PokecNDataset(InMemoryDataset):
         torch.save(data, self.processed_paths[0])
 
 
-if __name__ == "__main__":
-    pokec_z = PokecZDataset(
-        transform=RandomNodeSplit(num_val=1000, num_test=1000),
-    )
-    print(pokec_z[0])
-    print(pokec_z[0].train_mask.sum().item())
-    print(pokec_z[0].val_mask.sum().item())
-    print(pokec_z[0].test_mask.sum().item())
+pokec_z = PokecZDataset(
+    transform=RandomNodeSplit(num_val=1000, num_test=1000),
+)
 
-    print()
+pokec_n = PokecNDataset(
+    transform=RandomNodeSplit(num_val=1000, num_test=1000),
+)
 
-    pokec_n = PokecNDataset(
-        transform=RandomNodeSplit(num_val=1000, num_test=1000),
-    )
-    print(pokec_n[0])
-    print(pokec_n[0].train_mask.sum().item())
-    print(pokec_n[0].val_mask.sum().item())
-    print(pokec_n[0].test_mask.sum().item())
+print(pokec_z[0].y.unique())
+print(pokec_n[0].y.unique())
