@@ -1,8 +1,12 @@
 import numpy as np
 import pandas as pd
 import torch
+from torch_geometric.data import Data, InMemoryDataset
+from torch_geometric.transforms import RandomNodeSplit
 
-from torch_geometric.data import InMemoryDataset, Data
+from src.utils import set_random_seed
+
+set_random_seed(0)
 
 
 def load_pokec_data(suffix: str = ""):
@@ -76,8 +80,20 @@ class PokecNDataset(InMemoryDataset):
 
 
 if __name__ == "__main__":
-    pokec_z = PokecZDataset()
-    print(pokec_z.data)
+    pokec_z = PokecZDataset(
+        transform=RandomNodeSplit(num_val=1000, num_test=1000),
+    )
+    print(pokec_z[0])
+    print(pokec_z[0].train_mask.sum().item())
+    print(pokec_z[0].val_mask.sum().item())
+    print(pokec_z[0].test_mask.sum().item())
 
-    pokec_n = PokecNDataset()
-    print(pokec_n.data)
+    print()
+
+    pokec_n = PokecNDataset(
+        transform=RandomNodeSplit(num_val=1000, num_test=1000),
+    )
+    print(pokec_n[0])
+    print(pokec_n[0].train_mask.sum().item())
+    print(pokec_n[0].val_mask.sum().item())
+    print(pokec_n[0].test_mask.sum().item())
