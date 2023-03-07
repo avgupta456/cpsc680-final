@@ -29,6 +29,11 @@ def load_pokec_data(suffix: str = ""):
     # TODO: invesigate what labels mean, why there are 5 or 6 of them
     # Ranges from -1 to 3 for pokec_z, -1 to 4 for pokec_n
     labels = df[predict_attr].values + 1
+
+    # one hot encoding
+    n_unique = len(np.unique(labels))
+    labels = np.eye(n_unique)[labels]
+
     sens_attrs = df[sens_attr].values.reshape(-1, 1)
 
     idx = np.array(df["user_id"], dtype=int)
@@ -41,10 +46,10 @@ def load_pokec_data(suffix: str = ""):
     ).reshape(edge_unordered.shape)
 
     data = Data(
-        x=torch.from_numpy(features),
-        edge_index=torch.from_numpy(edges.T),
-        y=torch.from_numpy(labels),
-        sens_attrs=torch.from_numpy(sens_attrs),
+        x=torch.from_numpy(features).float(),
+        edge_index=torch.from_numpy(edges.T).long(),
+        y=torch.from_numpy(labels).float(),
+        sens_attrs=torch.from_numpy(sens_attrs).bool(),
     )
     return data
 
@@ -98,6 +103,3 @@ pokec_z = PokecZDataset(
 pokec_n = PokecNDataset(
     transform=RandomNodeSplit(num_val=1000, num_test=1000),
 )
-
-print(pokec_z[0].y.unique())
-print(pokec_n[0].y.unique())
