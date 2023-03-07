@@ -91,5 +91,5 @@ def train_model(dataset, dataset_name, epochs=200):
 
 
 if __name__ == "__main__":
-    train_model(pokec_z, "pokec_z", 50)
-    train_model(pokec_n, "pokec_n", 50)
+    train_model(pokec_z, "pokec_z", 200)
+    train_model(pokec_n, "pokec_n", 200)
