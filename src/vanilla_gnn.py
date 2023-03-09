@@ -18,64 +18,80 @@ class VanillaGNN(torch.nn.Module):
         x = self.conv1(x, edge_index)
         x = x.relu()
         x = self.conv2(x, edge_index)
-        x = x.log_softmax(dim=-1)
+        x = x.sigmoid()
 
-        return x
+        return x.squeeze()
 
 
 def train_gnn(model, data, optimizer):
     model.train()
     optimizer.zero_grad()
-    out = model(data)
-    loss = F.cross_entropy(out[data.train_mask], data.y[data.train_mask])
+    mask = data.train_mask
+    out = model(data)[mask]
+    pred = data.y[mask]
+
+    loss = F.binary_cross_entropy(out, pred)
     loss.backward()
     optimizer.step()
-    return loss
+
+    correct = out.round().eq(pred).sum().item()
+    count = mask.sum().item()
+    acc = correct / count
+
+    return loss, acc
 
 
 def val_gnn(model, data):
     model.eval()
-    out = model(data)
-    loss = F.cross_entropy(out[data.val_mask], data.y[data.val_mask])
-    y_pred = out[data.val_mask].max(dim=1)[1]
-    y_true = data.y[data.val_mask].max(dim=1)[1]
-    correct = y_pred.eq(y_true).sum().item()
-    count = data.val_mask.sum().item()
+    mask = data.val_mask
+    out = model(data)[mask]
+    pred = data.y[mask]
+
+    loss = F.binary_cross_entropy(out, pred)
+
+    correct = out.round().eq(pred).sum().item()
+    count = mask.sum().item()
     acc = correct / count
+
     return loss, acc
 
 
 def test_gnn(model, data):
     model.eval()
-    out = model(data)
-    loss = F.cross_entropy(out[data.test_mask], data.y[data.test_mask])
-    y_pred = out[data.test_mask].max(dim=1)[1]
-    y_true = data.y[data.test_mask].max(dim=1)[1]
-    correct = y_pred.eq(y_true).sum().item()
-    count = data.test_mask.sum().item()
+    mask = data.test_mask
+    out = model(data)[mask]
+    pred = data.y[mask]
+
+    loss = F.binary_cross_entropy(out, pred)
+
+    correct = out.round().eq(pred).sum().item()
+    count = mask.sum().item()
     acc = correct / count
+
     return loss, acc
 
 
-def train_model(dataset, dataset_name, epochs=200):
+def train_model(dataset, dataset_name, n_hidden, epochs):
     print(f"Training {dataset_name} model...")
 
     data = dataset[0]
     model = VanillaGNN(
         in_channels=dataset.num_features,
-        out_channels=dataset.num_classes,
-        hidden_channels=16,
+        hidden_channels=n_hidden,
+        out_channels=1,
     )
 
-    optimizer = torch.optim.Adam(model.parameters(), lr=0.01, weight_decay=5e-4)
+    optimizer = torch.optim.Adam(model.parameters(), lr=5e-3, weight_decay=1e-3)
 
     best_model = None
     for epoch in range(epochs):
-        loss = train_gnn(model, data, optimizer)
+        train_loss, train_acc = train_gnn(model, data, optimizer)
         val_loss, val_acc = val_gnn(model, data)
+
         print(
-            f"Epoch: {epoch}, Loss: {loss:.4f}, Val Loss: {val_loss:.4f}, Val Acc: {val_acc:.4f}"
+            f"Epoch: {epoch}, Train Loss: {train_loss:.4f}, Train Acc: {train_acc:.4f}, Val Loss: {val_loss:.4f}, Val Acc: {val_acc:.4f}"
         )
+
         if best_model is None or val_loss < best_model[0]:
             best_model = (val_loss, val_acc, model.state_dict())
 
@@ -87,9 +103,9 @@ def train_model(dataset, dataset_name, epochs=200):
     print()
 
     # save model
-    torch.save(model.state_dict(), f"models/{dataset_name}.pt")
+    torch.save(model, f"models/{dataset_name}_{n_hidden}.pt")
 
 
 if __name__ == "__main__":
-    train_model(pokec_z, "pokec_z", 200)
-    train_model(pokec_n, "pokec_n", 200)
+    train_model(pokec_z, "pokec_z", 128, 50)
+    train_model(pokec_n, "pokec_n", 128, 50)

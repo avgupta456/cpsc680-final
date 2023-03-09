@@ -2,7 +2,7 @@ import numpy as np
 import pandas as pd
 import torch
 from torch_geometric.data import Data, InMemoryDataset
-from torch_geometric.transforms import RandomNodeSplit
+from torch_geometric.transforms import ToUndirected
 
 from src.utils import set_random_seed
 
@@ -26,13 +26,9 @@ def load_pokec_data(suffix: str = ""):
     # TODO: very slight data leakage here, but it's not a big deal
     features = (features - features.mean(axis=0)) / features.std(axis=0)
 
-    # TODO: invesigate what labels mean, why there are 5 or 6 of them
-    # Ranges from -1 to 3 for pokec_z, -1 to 4 for pokec_n
-    labels = df[predict_attr].values + 1
-
-    # one hot encoding
-    n_unique = len(np.unique(labels))
-    labels = np.eye(n_unique)[labels]
+    # -1 means missing value, 0 means no job, 1 means job
+    labels = df[predict_attr].values
+    labels = np.minimum(labels, 1)
 
     sens_attrs = df[sens_attr].values.reshape(-1, 1)
 
@@ -45,11 +41,30 @@ def load_pokec_data(suffix: str = ""):
         list(map(idx_map.get, edge_unordered.flatten())), dtype=int
     ).reshape(edge_unordered.shape)
 
+    # Among the labeled nodes, randomly select 1000 validation, 1000 test, rest training
+    labels_idx = np.where(labels >= 0)[0]
+    val_test_idx = np.random.choice(labels_idx, size=2000, replace=False)
+    val_idx = np.random.choice(val_test_idx, size=1000, replace=False)
+    test_idx = np.setdiff1d(val_test_idx, val_idx)
+    train_idx = np.setdiff1d(labels_idx, val_test_idx)
+
+    train_mask = np.zeros(labels.shape, dtype=bool)
+    train_mask[train_idx] = True
+
+    val_mask = np.zeros(labels.shape, dtype=bool)
+    val_mask[val_idx] = True
+
+    test_mask = np.zeros(labels.shape, dtype=bool)
+    test_mask[test_idx] = True
+
     data = Data(
         x=torch.from_numpy(features).float(),
         edge_index=torch.from_numpy(edges.T).long(),
         y=torch.from_numpy(labels).float(),
         sens_attrs=torch.from_numpy(sens_attrs).bool(),
+        train_mask=torch.from_numpy(train_mask).bool(),
+        val_mask=torch.from_numpy(val_mask).bool(),
+        test_mask=torch.from_numpy(test_mask).bool(),
     )
     return data
 
@@ -96,10 +111,5 @@ class PokecNDataset(InMemoryDataset):
         torch.save(data, self.processed_paths[0])
 
 
-pokec_z = PokecZDataset(
-    transform=RandomNodeSplit(num_val=1000, num_test=1000),
-)
-
-pokec_n = PokecNDataset(
-    transform=RandomNodeSplit(num_val=1000, num_test=1000),
-)
+pokec_z = PokecZDataset(pre_transform=ToUndirected())
+pokec_n = PokecNDataset(pre_transform=ToUndirected())
