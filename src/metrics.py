@@ -3,7 +3,7 @@ import torch
 import numpy as np
 
 from src.datasets.pokec import pokec_n, pokec_z
-from src.vanilla_gnn import VanillaGNN
+from src.vanilla_gnn import VanillaGAT, VanillaGCN, VanillaSAGE, VanillaGIN
 
 
 def fair_metric(labels, sens, output, idx):
@@ -42,6 +42,6 @@ def eval_model(data, model):
 
 if __name__ == "__main__":
     dataset = pokec_z
-    model: VanillaGNN = torch.load("models/pokec_z_16.pt")
+    model = torch.load("models/pokec_z_16.pt")
 
     eval_model(dataset[0], model)

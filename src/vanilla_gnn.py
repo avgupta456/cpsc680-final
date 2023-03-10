@@ -1,16 +1,67 @@
 import torch
 import torch.nn.functional as F
 
-from torch_geometric.nn import GCNConv
+from torch_geometric.nn import GCNConv, GATConv, SAGEConv, GINConv
 
 from src.datasets.pokec import pokec_z, pokec_n
 
 
-class VanillaGNN(torch.nn.Module):
+class VanillaGCN(torch.nn.Module):
     def __init__(self, in_channels, out_channels, hidden_channels):
         super().__init__()
         self.conv1 = GCNConv(in_channels, hidden_channels, 1)
-        self.conv2 = GCNConv(hidden_channels, out_channels, 1)
+        self.conv2 = GCNConv(hidden_channels, hidden_channels, 1)
+
+    def forward(self, data):
+        x, edge_index = data.x, data.edge_index
+
+        x = self.conv1(x, edge_index)
+        x = x.relu()
+        x = self.conv2(x, edge_index)
+        x = x.sigmoid()
+
+        return x.squeeze()
+
+
+class VanillaGAT(torch.nn.Module):
+    def __init__(self, in_channels, out_channels, hidden_channels):
+        super().__init__()
+        self.conv1 = GATConv(in_channels, hidden_channels, 1)
+        self.conv2 = GATConv(hidden_channels, out_channels, 1)
+
+    def forward(self, data):
+        x, edge_index = data.x, data.edge_index
+
+        x = self.conv1(x, edge_index)
+        x = x.relu()
+        x = self.conv2(x, edge_index)
+        x = x.sigmoid()
+
+        return x.squeeze()
+
+
+class VanillaSAGE(torch.nn.Module):
+    def __init__(self, in_channels, out_channels, hidden_channels):
+        super().__init__()
+        self.conv1 = SAGEConv(in_channels, hidden_channels)
+        self.conv2 = SAGEConv(hidden_channels, out_channels)
+
+    def forward(self, data):
+        x, edge_index = data.x, data.edge_index
+
+        x = self.conv1(x, edge_index)
+        x = x.relu()
+        x = self.conv2(x, edge_index)
+        x = x.sigmoid()
+
+        return x.squeeze()
+
+
+class VanillaGIN(torch.nn.Module):
+    def __init__(self, in_channels, out_channels, hidden_channels):
+        super().__init__()
+        self.conv1 = GINConv(torch.nn.Linear(in_channels, hidden_channels))
+        self.conv2 = GINConv(torch.nn.Linear(hidden_channels, out_channels))
 
     def forward(self, data):
         x, edge_index = data.x, data.edge_index
@@ -75,7 +126,7 @@ def train_model(dataset, dataset_name, n_hidden, epochs):
     print(f"Training {dataset_name} model...")
 
     data = dataset[0]
-    model = VanillaGNN(
+    model = VanillaGCN(
         in_channels=dataset.num_features,
         hidden_channels=n_hidden,
         out_channels=1,
@@ -107,5 +158,5 @@ def train_model(dataset, dataset_name, n_hidden, epochs):
 
 
 if __name__ == "__main__":
-    train_model(pokec_z, "pokec_z", 128, 50)
-    train_model(pokec_n, "pokec_n", 128, 50)
+    train_model(pokec_z, "pokec_z", 16, 50)
+    train_model(pokec_n, "pokec_n", 16, 50)
