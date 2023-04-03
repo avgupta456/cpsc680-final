@@ -2,3 +2,5 @@ data/**/processed
 models/**
 
 __pycache__
+
+.venv
