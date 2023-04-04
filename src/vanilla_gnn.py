@@ -3,6 +3,7 @@ import torch.nn.functional as F
 
 from torch_geometric.nn import GCNConv, GATConv, SAGEConv, GINConv
 
+from src.datasets.german import german
 from src.datasets.pokec import pokec_z, pokec_n
 
 
@@ -158,5 +159,6 @@ def train_model(dataset, dataset_name, n_hidden, epochs):
 
 
 if __name__ == "__main__":
-    train_model(pokec_z, "pokec_z", 16, 50)
-    train_model(pokec_n, "pokec_n", 16, 50)
+    # train_model(pokec_z, "pokec_z", 16, 50)
+    # train_model(pokec_n, "pokec_n", 16, 50)
+    train_model(german, "german", 16, 50)
