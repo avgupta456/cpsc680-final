@@ -2,7 +2,9 @@ import torch
 
 import numpy as np
 
+from src.datasets.german import german
 from src.datasets.pokec import pokec_n, pokec_z
+
 from src.vanilla_gnn import VanillaGAT, VanillaGCN, VanillaSAGE, VanillaGIN
 
 
@@ -41,7 +43,7 @@ def eval_model(data, model):
 
 
 if __name__ == "__main__":
-    dataset = pokec_z
-    model = torch.load("models/pokec_z_16.pt")
+    dataset = german
+    model = torch.load("models/german_16.pt")
 
     eval_model(dataset[0], model)
