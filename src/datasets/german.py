@@ -9,14 +9,16 @@ from src.utils import device, set_random_seed
 set_random_seed(0)
 
 
-def load_german_data():
+def load_german_data(aware):
     df = pd.read_csv("data/german/german.csv")
     columns = list(df.columns)
 
     sens_attr = "Gender"
     predict_attr = "GoodCustomer"
 
-    columns.remove(sens_attr)
+    if not aware:
+        columns.remove(sens_attr)
+
     columns.remove(predict_attr)
     columns.remove("OtherLoansAtStore")
     columns.remove("PurposeOfLoan")
@@ -75,10 +77,11 @@ def load_german_data():
 
 
 class GermanDataset(InMemoryDataset):
-    def __init__(self, transform=None, pre_transform=None, pre_filter=None):
+    def __init__(self, transform=None, pre_transform=None, pre_filter=None, aware=False):
         super().__init__("data/german", transform, pre_transform, pre_filter)
 
         self.data, self.slices = torch.load(self.processed_paths[0])
+        self.aware = aware
 
     @property
     def raw_file_names(self):
@@ -89,13 +92,14 @@ class GermanDataset(InMemoryDataset):
         return "german.pt"
 
     def process(self):
-        data: Data = load_german_data()
+        data: Data = load_german_data(self.aware)
         data = self.collate([data])
 
         torch.save(data, self.processed_paths[0])
 
 
 german = GermanDataset(transform=T.Compose([T.ToDevice(device), T.ToUndirected()]))
+aware_german = GermanDataset(transform=T.Compose([T.ToDevice(device), T.ToUndirected()]),aware=True)
 
 link_pred_german = GermanDataset(
     transform=T.Compose(
