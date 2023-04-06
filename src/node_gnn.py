@@ -1,5 +1,6 @@
 import torch
 import torch.nn.functional as F
+import torchmetrics
 
 from torch_geometric.nn import GCNConv, GATConv, SAGEConv, GINConv
 
@@ -11,6 +12,7 @@ class VanillaNode(torch.nn.Module):
         out_channels,
         hidden_channels,
         block=GCNConv,
+        dropout=0.0,
     ):
         super().__init__()
 
@@ -30,10 +32,13 @@ class VanillaNode(torch.nn.Module):
                 self.convs.append(block(hidden_channels[i - 1], hidden_channels[i]))
         self.convs.append(block(hidden_channels[-1], out_channels))
 
+        self.dropout = dropout
+
     def forward(self, x, edge_index):
         for conv in self.convs[:-1]:
             x = conv(x, edge_index)
             x = x.relu()
+            x = F.dropout(x, p=self.dropout, training=self.training)
 
         x = self.convs[-1](x, edge_index)
         x = x.sigmoid()
@@ -45,6 +50,7 @@ class VanillaNode(torch.nn.Module):
         for conv in self.convs[:-2]:
             x = conv(x, edge_index)
             x = x.relu()
+            x = F.dropout(x, p=self.dropout, training=self.training)
 
         return self.convs[-2](x, edge_index)
 
@@ -57,6 +63,8 @@ def run_node_gnn(model, data, mask, optimizer=None):
     if optimizer:
         model.train()
         optimizer.zero_grad()
+    else:
+        model.eval()
 
     out = model(data.x, data.edge_index)[mask]
     pred = data.y[mask]
@@ -70,8 +78,10 @@ def run_node_gnn(model, data, mask, optimizer=None):
     correct = out.round().eq(pred).sum().item()
     count = mask.sum().item()
     acc = correct / count
+    auc = torchmetrics.functional.auroc(out, pred.to(int), task="binary")
+    f1 = torchmetrics.functional.f1_score(out, pred.to(int), task="binary")
 
-    return loss, acc
+    return loss, acc, auc, f1
 
 
 def train_node_model(model, dataset, optimizer, epochs):
@@ -84,11 +94,13 @@ def train_node_model(model, dataset, optimizer, epochs):
     data = dataset[0]
     best_model = None
     for epoch in range(epochs):
-        train_loss, train_acc = run_node_gnn(model, data, data.train_mask, optimizer)
-        val_loss, val_acc = run_node_gnn(model, data, data.val_mask)
+        train_loss, train_acc, train_auc, train_f1 = run_node_gnn(
+            model, data, data.train_mask, optimizer
+        )
+        val_loss, val_acc, val_auc, val_f1 = run_node_gnn(model, data, data.val_mask)
 
         print(
-            f"Epoch: {epoch}, Train Loss: {train_loss:.4f}, Train Acc: {train_acc:.4f}, Val Loss: {val_loss:.4f}, Val Acc: {val_acc:.4f}"
+            f"Epoch: {epoch}, Train Loss: {train_loss:.4f}, Train Acc: {train_acc:.4f}, Val Loss: {val_loss:.4f}, Val Acc: {val_acc:.4f}, Val Auc: {val_auc:.4f}, Val F1: {val_f1:.4f}"
         )
 
         if best_model is None or val_loss < best_model[0]:
@@ -97,8 +109,10 @@ def train_node_model(model, dataset, optimizer, epochs):
     print()
 
     model.load_state_dict(best_model[2])
-    loss, acc = run_node_gnn(model, data, data.test_mask)
-    print(f"Test Loss: {loss:.4f}, Test Acc: {acc:.4f}")
+    loss, acc, auc, f1 = run_node_gnn(model, data, data.test_mask)
+    print(
+        f"Test Loss: {loss:.4f}, Test Acc: {acc:.4f}, Test Auc: {auc:.4f}, Test F1: {f1:.4f}"
+    )
     print()
 
     # save model

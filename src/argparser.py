@@ -37,6 +37,7 @@ def get_args():
         choices=["GCNConv", "GATConv", "SAGEConv", "GINConv"],
     )
     argparser.add_argument("--hidden", type=int, nargs="+", default=[16])
+    argparser.add_argument("--dropout", type=float, default=0.0)
 
     # Training
     argparser.add_argument("--epochs", type=int, default=50)
@@ -80,6 +81,7 @@ def parse_vanilla_args(args):
             hidden_channels=args.hidden,
             out_channels=1,
             block=block,
+            dropout=args.dropout,
         ).to(device)
         train_model = train_node_model
 
@@ -97,6 +99,7 @@ def parse_vanilla_args(args):
             in_channels=dataset.num_features,
             hidden_channels=args.hidden,
             block=block,
+            dropout=args.dropout,
         ).to(device)
         train_model = train_edge_model
 
