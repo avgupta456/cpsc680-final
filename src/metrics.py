@@ -1,11 +1,6 @@
-import torch
-
 import numpy as np
 
-from src.datasets.german import german
-from src.datasets.pokec import pokec_n, pokec_z
-
-from src.vanilla_gnn import VanillaGAT, VanillaGCN, VanillaSAGE, VanillaGIN
+from src.argparser import get_args, parse_metric_args
 
 
 def fair_metric(labels, sens, output, idx):
@@ -28,7 +23,7 @@ def fair_metric(labels, sens, output, idx):
 
 def eval_model(data, model):
     model.eval()
-    output = model(data)
+    output = model(data.x, data.edge_index)
     labels = data.y
     sens = data.sens_attrs.flatten()
 
@@ -43,7 +38,7 @@ def eval_model(data, model):
 
 
 if __name__ == "__main__":
-    dataset = german
-    model = torch.load("models/german_16.pt")
+    args = get_args()
+    dataset, model = parse_metric_args(args)
 
     eval_model(dataset[0], model)
