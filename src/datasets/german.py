@@ -2,7 +2,7 @@ import numpy as np
 import pandas as pd
 import torch
 from torch_geometric.data import Data, InMemoryDataset
-from torch_geometric.transforms import ToDevice, ToUndirected
+import torch_geometric.transforms as T
 
 from src.utils import device, set_random_seed
 
@@ -38,7 +38,9 @@ def load_german_data():
 
     idx = np.arange(features.shape[0], dtype=int)
     idx_map = {j: i for i, j in enumerate(idx)}
-    edge_unordered = np.genfromtxt("data/german/german_edges.txt", dtype=float).astype(int)
+    edge_unordered = np.genfromtxt("data/german/german_edges.txt", dtype=float).astype(
+        int
+    )
     edges = np.array(
         list(map(idx_map.get, edge_unordered.flatten())), dtype=int
     ).reshape(edge_unordered.shape)
@@ -93,4 +95,19 @@ class GermanDataset(InMemoryDataset):
         torch.save(data, self.processed_paths[0])
 
 
-german = GermanDataset(pre_transform=ToUndirected(), transform=ToDevice(device))
+german = GermanDataset(transform=T.Compose([T.ToDevice(device), T.ToUndirected()]))
+
+link_pred_german = GermanDataset(
+    transform=T.Compose(
+        [
+            T.ToDevice(device),
+            T.ToUndirected(),
+            T.RandomLinkSplit(
+                num_val=0.1,
+                num_test=0.1,
+                is_undirected=True,
+                add_negative_train_samples=False,
+            ),
+        ]
+    ),
+)

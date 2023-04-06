@@ -2,7 +2,7 @@ import numpy as np
 import pandas as pd
 import torch
 from torch_geometric.data import Data, InMemoryDataset
-from torch_geometric.transforms import ToDevice, ToUndirected
+import torch_geometric.transforms as T
 
 from src.utils import device, set_random_seed
 
@@ -112,5 +112,36 @@ class PokecNDataset(InMemoryDataset):
         torch.save(data, self.processed_paths[0])
 
 
-pokec_z = PokecZDataset(pre_transform=ToUndirected(), transform=ToDevice(device))
-pokec_n = PokecNDataset(pre_transform=ToUndirected(), transform=ToDevice(device))
+pokec_z = PokecZDataset(transform=T.Compose([T.ToDevice(device), T.ToUndirected()]))
+
+link_pred_pokec_z = PokecZDataset(
+    transform=T.Compose(
+        [
+            T.ToDevice(device),
+            T.ToUndirected(),
+            T.RandomLinkSplit(
+                num_val=0.1,
+                num_test=0.1,
+                is_undirected=True,
+                add_negative_train_samples=False,
+            ),
+        ]
+    )
+)
+
+pokec_n = PokecNDataset(transform=T.Compose([T.ToDevice(device), T.ToUndirected()]))
+
+link_pred_pokec_n = PokecNDataset(
+    transform=T.Compose(
+        [
+            T.ToDevice(device),
+            T.ToUndirected(),
+            T.RandomLinkSplit(
+                num_val=0.1,
+                num_test=0.1,
+                is_undirected=True,
+                add_negative_train_samples=False,
+            ),
+        ]
+    )
+)
