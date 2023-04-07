@@ -5,6 +5,9 @@ from torch_geometric.nn import GCNConv, GATConv, SAGEConv, GINConv
 
 
 from src.datasets import (
+    bail,
+    bail_aware,
+    bail_link_pred,
     german,
     german_aware,
     german_link_pred,
@@ -28,7 +31,7 @@ def get_args():
         "--dataset",
         type=str,
         default="german",
-        choices=["german", "pokec_n", "pokec_z"],
+        choices=["bail", "german", "pokec_n", "pokec_z"],
     )
     argparser.add_argument(
         "--aware",
@@ -74,7 +77,9 @@ def parse_vanilla_args(args):
     model = None
     train_model = None
     if args.type == "node":
-        if args.dataset == "german":
+        if args.dataset == "bail":
+            dataset = bail_aware if args.aware else bail
+        elif args.dataset == "german":
             dataset = german_aware if args.aware else german
         elif args.dataset == "pokec_n":
             dataset = pokec_n_aware if args.aware else pokec_n
@@ -93,7 +98,9 @@ def parse_vanilla_args(args):
         train_model = train_node_model
 
     elif args.type == "edge":
-        if args.dataset == "german":
+        if args.dataset == "bail":
+            dataset = bail_link_pred
+        elif args.dataset == "german":
             dataset = german_link_pred
         elif args.dataset == "pokec_n":
             dataset = pokec_n_link_pred
@@ -125,7 +132,11 @@ def parse_metric_args(args):
 
     dataset_name = model_path.split("Dataset")[0]
     dataset = None
-    if dataset_name == "German":
+    if dataset_name == "Bail":
+        dataset = bail
+    elif dataset_name == "BailAware":
+        dataset = bail_aware
+    elif dataset_name == "German":
         dataset = german
     elif dataset_name == "GermanAware":
         dataset = german_aware
