@@ -18,18 +18,12 @@ def load_german_data(aware):
     sens_attr = "Gender"
     predict_attr = "GoodCustomer"
 
-    if not aware:
-        columns.remove(sens_attr)
-
+    columns.remove(sens_attr)
     columns.remove(predict_attr)
     columns.remove("OtherLoansAtStore")
     columns.remove("PurposeOfLoan")
 
     features = df[columns].values
-
-    # Normalize features to have mean 0 and std 1
-    # TODO: very slight data leakage here, but it's not a big deal
-    features = (features - features.mean(axis=0)) / features.std(axis=0)
 
     # -1, 0 --> 0, 1
     labels = df[predict_attr].values
@@ -39,6 +33,9 @@ def load_german_data(aware):
     sens_attrs[sens_attrs == "Female"] = 1
     sens_attrs[sens_attrs == "Male"] = 0
     sens_attrs = sens_attrs.astype(int)
+
+    if aware:
+        features = np.concatenate([features, sens_attrs], axis=1)
 
     idx = np.arange(features.shape[0], dtype=int)
     idx_map = {j: i for i, j in enumerate(idx)}
@@ -50,17 +47,9 @@ def load_german_data(aware):
     ).reshape(edge_unordered.shape)
 
     """
-    # Among the labeled nodes, randomly select 250 validation, 250 test, rest training
-    labels_idx = np.arange(labels.shape[0], dtype=int)
-    val_test_idx = np.random.choice(labels_idx, size=500, replace=False)
-    val_idx = np.random.choice(val_test_idx, size=250, replace=False)
-    test_idx = np.setdiff1d(val_test_idx, val_idx)
-    train_idx = np.setdiff1d(labels_idx, val_test_idx)
+    NOTE: Identical setup to EDITS paper (seed 20)
+    Model is only unfair with so few (100) training nodes
     """
-
-    # Identical setup to EDITS paper
-    # Might want to look at giving mroe training data than 100 nodes
-    # However, this seems to make the vanilla model more fair
 
     random.seed(20)
     label_idx_0 = np.where(labels == 0)[0]
@@ -90,6 +79,10 @@ def load_german_data(aware):
     test_mask = np.zeros(labels.shape, dtype=bool)
     test_mask[test_idx] = True
 
+    # Normalize features to have mean 0 and std 1
+    mean, std = features[train_mask].mean(axis=0), features[train_mask].std(axis=0)
+    features = (features - mean) / std
+
     data = Data(
         x=torch.from_numpy(features).float(),
         edge_index=torch.from_numpy(edges.T).long(),
@@ -104,13 +97,9 @@ def load_german_data(aware):
 
 
 class GermanDataset(InMemoryDataset):
-    def __init__(
-        self, transform=None, pre_transform=None, pre_filter=None, aware=False
-    ):
+    def __init__(self, transform=None, pre_transform=None, pre_filter=None):
         super().__init__("data/german", transform, pre_transform, pre_filter)
-
         self.data, self.slices = torch.load(self.processed_paths[0])
-        self.aware = aware
 
     @property
     def raw_file_names(self):
@@ -121,15 +110,35 @@ class GermanDataset(InMemoryDataset):
         return "german.pt"
 
     def process(self):
-        data: Data = load_german_data(self.aware)
+        data: Data = load_german_data(False)
+        data = self.collate([data])
+
+        torch.save(data, self.processed_paths[0])
+
+
+class AwareGermanDataset(InMemoryDataset):
+    def __init__(self, transform=None, pre_transform=None, pre_filter=None):
+        super().__init__("data/german", transform, pre_transform, pre_filter)
+        self.data, self.slices = torch.load(self.processed_paths[0])
+
+    @property
+    def raw_file_names(self):
+        return []
+
+    @property
+    def processed_file_names(self):
+        return "aware_german.pt"
+
+    def process(self):
+        data: Data = load_german_data(True)
         data = self.collate([data])
 
         torch.save(data, self.processed_paths[0])
 
 
 german = GermanDataset(transform=T.Compose([T.ToDevice(device), T.ToUndirected()]))
-aware_german = GermanDataset(
-    transform=T.Compose([T.ToDevice(device), T.ToUndirected()]), aware=True
+aware_german = AwareGermanDataset(
+    transform=T.Compose([T.ToDevice(device), T.ToUndirected()])
 )
 
 link_pred_german = GermanDataset(

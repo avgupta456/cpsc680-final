@@ -123,6 +123,8 @@ def parse_metric_args(args):
     dataset = None
     if dataset_name == "German":
         dataset = german
+    elif dataset_name == "AwareGerman":
+        dataset = aware_german
     elif dataset_name == "PokecN":
         dataset = pokec_n
     elif dataset_name == "PokecZ":
