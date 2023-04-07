@@ -1,3 +1,5 @@
+import random
+
 import numpy as np
 import pandas as pd
 import torch
@@ -47,12 +49,37 @@ def load_german_data(aware):
         list(map(idx_map.get, edge_unordered.flatten())), dtype=int
     ).reshape(edge_unordered.shape)
 
-    # Among the labeled nodes, randomly select 100 validation, 100 test, rest training
+    """
+    # Among the labeled nodes, randomly select 250 validation, 250 test, rest training
     labels_idx = np.arange(labels.shape[0], dtype=int)
-    val_test_idx = np.random.choice(labels_idx, size=200, replace=False)
-    val_idx = np.random.choice(val_test_idx, size=100, replace=False)
+    val_test_idx = np.random.choice(labels_idx, size=500, replace=False)
+    val_idx = np.random.choice(val_test_idx, size=250, replace=False)
     test_idx = np.setdiff1d(val_test_idx, val_idx)
     train_idx = np.setdiff1d(labels_idx, val_test_idx)
+    """
+
+    # Identical setup to EDITS paper
+    # Might want to look at giving mroe training data than 100 nodes
+    # However, this seems to make the vanilla model more fair
+
+    random.seed(20)
+    label_idx_0 = np.where(labels == 0)[0]
+    label_idx_1 = np.where(labels == 1)[0]
+    random.shuffle(label_idx_0)
+    random.shuffle(label_idx_1)
+
+    train_idx = np.append(
+        label_idx_0[: min(int(0.5 * len(label_idx_0)), 100 // 2)],
+        label_idx_1[: min(int(0.5 * len(label_idx_1)), 100 // 2)],
+    )
+    val_idx = np.append(
+        label_idx_0[int(0.5 * len(label_idx_0)) : int(0.75 * len(label_idx_0))],
+        label_idx_1[int(0.5 * len(label_idx_1)) : int(0.75 * len(label_idx_1))],
+    )
+    test_idx = np.append(
+        label_idx_0[int(0.75 * len(label_idx_0)) :],
+        label_idx_1[int(0.75 * len(label_idx_1)) :],
+    )
 
     train_mask = np.zeros(labels.shape, dtype=bool)
     train_mask[train_idx] = True
@@ -77,7 +104,9 @@ def load_german_data(aware):
 
 
 class GermanDataset(InMemoryDataset):
-    def __init__(self, transform=None, pre_transform=None, pre_filter=None, aware=False):
+    def __init__(
+        self, transform=None, pre_transform=None, pre_filter=None, aware=False
+    ):
         super().__init__("data/german", transform, pre_transform, pre_filter)
 
         self.data, self.slices = torch.load(self.processed_paths[0])
@@ -99,7 +128,9 @@ class GermanDataset(InMemoryDataset):
 
 
 german = GermanDataset(transform=T.Compose([T.ToDevice(device), T.ToUndirected()]))
-aware_german = GermanDataset(transform=T.Compose([T.ToDevice(device), T.ToUndirected()]),aware=True)
+aware_german = GermanDataset(
+    transform=T.Compose([T.ToDevice(device), T.ToUndirected()]), aware=True
+)
 
 link_pred_german = GermanDataset(
     transform=T.Compose(
