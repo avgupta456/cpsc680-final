@@ -6,9 +6,7 @@ import torch
 from torch_geometric.data import Data, InMemoryDataset
 import torch_geometric.transforms as T
 
-from src.utils import device, set_random_seed
-
-set_random_seed(0)
+from src.utils import device
 
 
 def load_german_data(aware):

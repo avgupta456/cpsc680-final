@@ -1,12 +1,12 @@
+import random
+
 import numpy as np
 import pandas as pd
 import torch
 from torch_geometric.data import Data, InMemoryDataset
 import torch_geometric.transforms as T
 
-from src.utils import device, set_random_seed
-
-set_random_seed(0)
+from src.utils import device
 
 
 def load_pokec_data(suffix: str = ""):
@@ -41,21 +41,27 @@ def load_pokec_data(suffix: str = ""):
         list(map(idx_map.get, edge_unordered.flatten())), dtype=int
     ).reshape(edge_unordered.shape)
 
-    # Among the labeled nodes, randomly select 1000 validation, 1000 test, rest training
-    labels_idx = np.where(labels >= 0)[0]
-    val_test_idx = np.random.choice(labels_idx, size=2000, replace=False)
-    val_idx = np.random.choice(val_test_idx, size=1000, replace=False)
-    test_idx = np.setdiff1d(val_test_idx, val_idx)
-    train_idx = np.setdiff1d(labels_idx, val_test_idx)
+    """
+    NOTE: Identical setup to FairGNN paper (seed 20)
+    Model is only unfair with so few (500) training nodes
+    """
+
+    random.seed(20)
+    label_idx = np.where(labels >= 0)[0]
+    random.shuffle(label_idx)
+
+    idx_train = label_idx[: min(int(0.5 * len(label_idx)), 500)]
+    idx_val = label_idx[int(0.5 * len(label_idx)) : int(0.75 * len(label_idx))]
+    idx_test = label_idx[int(0.75 * len(label_idx)) :]
 
     train_mask = np.zeros(labels.shape, dtype=bool)
-    train_mask[train_idx] = True
+    train_mask[idx_train] = True
 
     val_mask = np.zeros(labels.shape, dtype=bool)
-    val_mask[val_idx] = True
+    val_mask[idx_val] = True
 
     test_mask = np.zeros(labels.shape, dtype=bool)
-    test_mask[test_idx] = True
+    test_mask[idx_test] = True
 
     data = Data(
         x=torch.from_numpy(features).float(),
