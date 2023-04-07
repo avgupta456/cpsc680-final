@@ -8,6 +8,9 @@ from src.datasets import (
     bail,
     bail_aware,
     bail_link_pred,
+    credit,
+    credit_aware,
+    credit_link_pred,
     german,
     german_aware,
     german_link_pred,
@@ -31,7 +34,7 @@ def get_args():
         "--dataset",
         type=str,
         default="german",
-        choices=["bail", "german", "pokec_n", "pokec_z"],
+        choices=["bail", "credit", "german", "pokec_n", "pokec_z"],
     )
     argparser.add_argument(
         "--aware",
@@ -79,6 +82,8 @@ def parse_vanilla_args(args):
     if args.type == "node":
         if args.dataset == "bail":
             dataset = bail_aware if args.aware else bail
+        elif args.dataset == "credit":
+            dataset = credit_aware if args.aware else credit
         elif args.dataset == "german":
             dataset = german_aware if args.aware else german
         elif args.dataset == "pokec_n":
@@ -100,6 +105,8 @@ def parse_vanilla_args(args):
     elif args.type == "edge":
         if args.dataset == "bail":
             dataset = bail_link_pred
+        elif args.dataset == "credit":
+            dataset = credit_link_pred
         elif args.dataset == "german":
             dataset = german_link_pred
         elif args.dataset == "pokec_n":
@@ -136,6 +143,10 @@ def parse_metric_args(args):
         dataset = bail
     elif dataset_name == "BailAware":
         dataset = bail_aware
+    elif dataset_name == "Credit":
+        dataset = credit
+    elif dataset_name == "CreditAware":
+        dataset = credit_aware
     elif dataset_name == "German":
         dataset = german
     elif dataset_name == "GermanAware":

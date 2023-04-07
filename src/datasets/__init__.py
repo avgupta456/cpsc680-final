@@ -1,4 +1,5 @@
 from src.datasets.bail import bail, bail_aware, bail_link_pred
+from src.datasets.credit import credit, credit_aware, credit_link_pred
 from src.datasets.german import german, german_aware, german_link_pred
 from src.datasets.pokec import (
     pokec_z,
@@ -13,6 +14,9 @@ __all__ = [
     "bail",
     "bail_aware",
     "bail_link_pred",
+    "credit",
+    "credit_aware",
+    "credit_link_pred",
     "german",
     "german_aware",
     "german_link_pred",
