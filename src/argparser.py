@@ -6,6 +6,7 @@ from torch_geometric.nn import GCNConv, GATConv, SAGEConv, GINConv
 
 from src.datasets import (
     german,
+    aware_german,
     link_pred_german,
     pokec_n,
     link_pred_pokec_n,
@@ -25,7 +26,7 @@ def get_args():
         "--dataset",
         type=str,
         default="german",
-        choices=["german", "pokec_n", "pokec_z"],
+        choices=["german", "aware_german", "pokec_n", "pokec_z"],
     )
 
     # Model
@@ -69,6 +70,8 @@ def parse_vanilla_args(args):
     if args.type == "node":
         if args.dataset == "german":
             dataset = german
+        elif args.dataset == "aware_german":
+            dataset = aware_german
         elif args.dataset == "pokec_n":
             dataset = pokec_n
         elif args.dataset == "pokec_z":
