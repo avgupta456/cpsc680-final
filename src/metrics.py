@@ -1,4 +1,5 @@
 import numpy as np
+import torchmetrics
 
 from src.argparser import get_args, parse_metric_args
 
@@ -29,10 +30,18 @@ def eval_model(data, model):
 
     idx = data.test_mask
     acc = (output[idx].squeeze() > 0.5).eq(labels[idx]).sum().item() / idx.sum().item()
+    auc = torchmetrics.functional.auroc(
+        output[idx].squeeze(), labels[idx].to(int), task="binary"
+    )
+    f1 = torchmetrics.functional.f1_score(
+        output[idx].squeeze(), labels[idx].to(int), task="binary"
+    )
     parity, equality = fair_metric(labels, sens, output, idx)
 
     print("Test set results:")
     print(f"Accuracy: {acc:.4f}")
+    print(f"AUC: {auc:.4f}")
+    print(f"F1: {f1:.4f}")
     print(f"Parity: {parity:.4f}")
     print(f"Equality: {equality:.4f}")
 
