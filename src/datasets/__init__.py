@@ -1,12 +1,21 @@
-from src.datasets.german import german, aware_german, link_pred_german
-from src.datasets.pokec import pokec_n, link_pred_pokec_n, pokec_z, link_pred_pokec_z
+from src.datasets.german import german, german_aware, german_link_pred
+from src.datasets.pokec import (
+    pokec_z,
+    pokec_z_aware,
+    pokec_z_link_pred,
+    pokec_n,
+    pokec_n_aware,
+    pokec_n_link_pred,
+)
 
 __all__ = [
     "german",
-    "aware_german",
-    "link_pred_german",
-    "pokec_n",
-    "link_pred_pokec_n",
+    "german_aware",
+    "german_link_pred",
     "pokec_z",
-    "link_pred_pokec_z",
+    "pokec_z_aware",
+    "pokec_z_link_pred",
+    "pokec_n",
+    "pokec_n_aware",
+    "pokec_n_link_pred",
 ]

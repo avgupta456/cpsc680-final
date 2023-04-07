@@ -9,7 +9,7 @@ import torch_geometric.transforms as T
 from src.utils import device
 
 
-def load_pokec_data(suffix: str = ""):
+def load_pokec_data(suffix, aware):
     df = pd.read_csv(f"data/pokec/region_job{suffix}.csv")
     columns = list(df.columns)
 
@@ -22,15 +22,14 @@ def load_pokec_data(suffix: str = ""):
 
     features = df[columns].values
 
-    # Normalize features to have mean 0 and std 1
-    # TODO: very slight data leakage here, but it's not a big deal
-    features = (features - features.mean(axis=0)) / features.std(axis=0)
-
     # -1 means missing value, 0 means no job, 1 means job
     labels = df[predict_attr].values
     labels = np.minimum(labels, 1)
 
     sens_attrs = df[sens_attr].values.reshape(-1, 1)
+
+    if aware:
+        features = np.concatenate([features, sens_attrs], axis=1)
 
     idx = np.array(df["user_id"], dtype=int)
     idx_map = {j: i for i, j in enumerate(idx)}
@@ -63,6 +62,10 @@ def load_pokec_data(suffix: str = ""):
     test_mask = np.zeros(labels.shape, dtype=bool)
     test_mask[idx_test] = True
 
+    # Normalize features to have mean 0 and std 1
+    mean, std = features[train_mask].mean(axis=0), features[train_mask].std(axis=0)
+    features = (features - mean) / std
+
     data = Data(
         x=torch.from_numpy(features).float(),
         edge_index=torch.from_numpy(edges.T).long(),
@@ -79,7 +82,6 @@ def load_pokec_data(suffix: str = ""):
 class PokecZDataset(InMemoryDataset):
     def __init__(self, transform=None, pre_transform=None, pre_filter=None):
         super().__init__("data/pokec", transform, pre_transform, pre_filter)
-
         self.data, self.slices = torch.load(self.processed_paths[0])
 
     @property
@@ -93,7 +95,25 @@ class PokecZDataset(InMemoryDataset):
     def process(self):
         data: Data = load_pokec_data(suffix="")
         data = self.collate([data])
+        torch.save(data, self.processed_paths[0])
 
+
+class PokecZAwareDataset(InMemoryDataset):
+    def __init__(self, transform=None, pre_transform=None, pre_filter=None):
+        super().__init__("data/pokec", transform, pre_transform, pre_filter)
+        self.data, self.slices = torch.load(self.processed_paths[0])
+
+    @property
+    def raw_file_names(self):
+        return []
+
+    @property
+    def processed_file_names(self):
+        return "pokec_z_aware.pt"
+
+    def process(self):
+        data: Data = load_pokec_data(suffix="", aware=True)
+        data = self.collate([data])
         torch.save(data, self.processed_paths[0])
 
 
@@ -114,13 +134,35 @@ class PokecNDataset(InMemoryDataset):
     def process(self):
         data: Data = load_pokec_data(suffix="_2")
         data = self.collate([data])
+        torch.save(data, self.processed_paths[0])
 
+
+class PokecNAwareDataset(InMemoryDataset):
+    def __init__(self, transform=None, pre_transform=None, pre_filter=None):
+        super().__init__("data/pokec", transform, pre_transform, pre_filter)
+
+        self.data, self.slices = torch.load(self.processed_paths[0])
+
+    @property
+    def raw_file_names(self):
+        return []
+
+    @property
+    def processed_file_names(self):
+        return "pokec_n_aware.pt"
+
+    def process(self):
+        data: Data = load_pokec_data(suffix="_2", aware=True)
+        data = self.collate([data])
         torch.save(data, self.processed_paths[0])
 
 
 pokec_z = PokecZDataset(transform=T.Compose([T.ToDevice(device), T.ToUndirected()]))
+pokec_z_aware = PokecZAwareDataset(
+    transform=T.Compose([T.ToDevice(device), T.ToUndirected()])
+)
 
-link_pred_pokec_z = PokecZDataset(
+pokec_z_link_pred = PokecZDataset(
     transform=T.Compose(
         [
             T.ToDevice(device),
@@ -136,8 +178,11 @@ link_pred_pokec_z = PokecZDataset(
 )
 
 pokec_n = PokecNDataset(transform=T.Compose([T.ToDevice(device), T.ToUndirected()]))
+pokec_n_aware = PokecNAwareDataset(
+    transform=T.Compose([T.ToDevice(device), T.ToUndirected()])
+)
 
-link_pred_pokec_n = PokecNDataset(
+pokec_n_link_pred = PokecNDataset(
     transform=T.Compose(
         [
             T.ToDevice(device),

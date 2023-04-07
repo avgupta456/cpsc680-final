@@ -6,12 +6,14 @@ from torch_geometric.nn import GCNConv, GATConv, SAGEConv, GINConv
 
 from src.datasets import (
     german,
-    aware_german,
-    link_pred_german,
-    pokec_n,
-    link_pred_pokec_n,
+    german_aware,
+    german_link_pred,
     pokec_z,
-    link_pred_pokec_z,
+    pokec_z_aware,
+    pokec_z_link_pred,
+    pokec_n,
+    pokec_n_aware,
+    pokec_n_link_pred,
 )
 from src.node_gnn import VanillaNode, train_node_model
 from src.edge_gnn import VanillaEdge, train_edge_model
@@ -26,7 +28,11 @@ def get_args():
         "--dataset",
         type=str,
         default="german",
-        choices=["german", "aware_german", "pokec_n", "pokec_z"],
+        choices=["german", "pokec_n", "pokec_z"],
+    )
+    argparser.add_argument(
+        "--aware",
+        action="store_true",
     )
 
     # Model
@@ -69,13 +75,11 @@ def parse_vanilla_args(args):
     train_model = None
     if args.type == "node":
         if args.dataset == "german":
-            dataset = german
-        elif args.dataset == "aware_german":
-            dataset = aware_german
+            dataset = german_aware if args.aware else german
         elif args.dataset == "pokec_n":
-            dataset = pokec_n
+            dataset = pokec_n_aware if args.aware else pokec_n
         elif args.dataset == "pokec_z":
-            dataset = pokec_z
+            dataset = pokec_z_aware if args.aware else pokec_z
         else:
             raise ValueError(f"Unknown dataset: {args.dataset}")
 
@@ -90,11 +94,11 @@ def parse_vanilla_args(args):
 
     elif args.type == "edge":
         if args.dataset == "german":
-            dataset = link_pred_german
+            dataset = german_link_pred
         elif args.dataset == "pokec_n":
-            dataset = link_pred_pokec_n
+            dataset = pokec_n_link_pred
         elif args.dataset == "pokec_z":
-            dataset = link_pred_pokec_z
+            dataset = pokec_z_link_pred
         else:
             raise ValueError(f"Unknown dataset: {args.dataset}")
 
@@ -123,12 +127,16 @@ def parse_metric_args(args):
     dataset = None
     if dataset_name == "German":
         dataset = german
-    elif dataset_name == "AwareGerman":
-        dataset = aware_german
+    elif dataset_name == "GermanAware":
+        dataset = german_aware
     elif dataset_name == "PokecN":
         dataset = pokec_n
+    elif dataset_name == "PokecNAware":
+        dataset = pokec_n_aware
     elif dataset_name == "PokecZ":
         dataset = pokec_z
+    elif dataset_name == "PokecZAware":
+        dataset = pokec_z_aware
     else:
         raise ValueError(f"Unknown dataset: {dataset_name}")
 
