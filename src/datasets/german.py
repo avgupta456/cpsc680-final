@@ -132,32 +132,28 @@ class GermanAwareDataset(InMemoryDataset):
         torch.save(data, self.processed_paths[0])
 
 
-class GermanMethod1Dataset(InMemoryDataset):
+class GermanModifiedDataset(InMemoryDataset):
     def __init__(self, transform=None, pre_transform=None, pre_filter=None):
         super().__init__("data/german", transform, pre_transform, pre_filter)
         self.data, self.slices = torch.load(self.processed_paths[0])
 
     @property
     def raw_file_names(self):
-        return ["method_1.pt"]
+        return []
 
     @property
     def processed_file_names(self):
-        return "german_method_1.pt"
+        return "german_modified.pt"
 
     def process(self):
-        data: Data = torch.load(self.raw_paths[0])
-        print(data)
-        data = self.collate([data])
-        torch.save(data, self.processed_paths[0])
+        pass
 
 
 german = GermanDataset(transform=T.Compose([T.ToDevice(device), T.ToUndirected()]))
-_german_aware = GermanAwareDataset(
+german_aware = GermanAwareDataset(
     transform=T.Compose([T.ToDevice(device), T.ToUndirected()])
 )
-
-german_aware = GermanMethod1Dataset(
+german_modified = GermanModifiedDataset(
     transform=T.Compose([T.ToDevice(device), T.ToUndirected()])
 )
 
