@@ -149,7 +149,7 @@ def parse_metric_args(args):
         dataset = credit_aware
     elif dataset_name == "German":
         dataset = german
-    elif dataset_name == "GermanAware":
+    elif dataset_name == "GermanAware" or dataset_name == "GermanMethod1":
         dataset = german_aware
     elif dataset_name == "PokecN":
         dataset = pokec_n
