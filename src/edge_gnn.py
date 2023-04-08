@@ -1,3 +1,5 @@
+import tqdm
+
 import torch
 import torch.nn.functional as F
 import torchmetrics
@@ -88,7 +90,7 @@ def run_edge_gnn(model, data, optimizer=None):
     return loss, acc, auc, f1
 
 
-def train_edge_model(model, dataset, optimizer, epochs):
+def train_edge_model(model, dataset, optimizer, epochs, debug):
     dataset_name = dataset.__class__.__name__
     model_name = repr(model)
     optimizer_name = optimizer.__class__.__name__
@@ -97,15 +99,16 @@ def train_edge_model(model, dataset, optimizer, epochs):
 
     train_data, val_data, test_data = dataset[0]
     best_model = None
-    for epoch in range(epochs):
-        train_loss, train_acc, train_auc, train_f1 = run_edge_gnn(
-            model, train_data, optimizer
-        )
+
+    iterator = range(epochs) if debug else tqdm.tqdm(range(epochs))
+    for epoch in iterator:
+        train_loss, train_acc, _, _ = run_edge_gnn(model, train_data, optimizer)
         val_loss, val_acc, val_auc, val_f1 = run_edge_gnn(model, val_data)
 
-        print(
-            f"Epoch: {epoch}, Train Loss: {train_loss:.4f}, Train Acc: {train_acc:.4f}, Val Loss: {val_loss:.4f}, Val Acc: {val_acc:.4f}, Val AUC: {val_auc:.4f}, Val F1: {val_f1:.4f}",
-        )
+        if debug:
+            print(
+                f"Epoch: {epoch}, Train Loss: {train_loss:.4f}, Train Acc: {train_acc:.4f}, Val Loss: {val_loss:.4f}, Val Acc: {val_acc:.4f}, Val AUC: {val_auc:.4f}, Val F1: {val_f1:.4f}",
+            )
 
         if best_model is None or val_loss < best_model[0]:
             best_model = (val_loss, val_acc, model.state_dict())
@@ -119,7 +122,8 @@ def train_edge_model(model, dataset, optimizer, epochs):
     )
     print()
 
+    model_name = f"{dataset_name}_{model_name}_{optimizer_name}_{epochs}.pt"
+
     # save model
-    torch.save(
-        model, f"models/{dataset_name}_{model_name}_{optimizer_name}_{epochs}.pt"
-    )
+    torch.save(model, f"models/{model_name}")
+    print(f"Saved model to models/{model_name}")

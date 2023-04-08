@@ -62,12 +62,13 @@ if __name__ == "__main__":
     edge_prob = edge_prob_1
 
     # Remove homophily edges with low edge probability
-    edge_index = data.edge_index[:, (edge_prob > 0.5) | ~edge_homophily]
+    edge_index = data.edge_index[:, ~(edge_homophily & (edge_prob < 0.5))]
 
     print(
         f"Removed {data.edge_index.shape[1] - edge_index.shape[1]} edges (out of {data.edge_index.shape[1]})"
     )
 
-    # Save to new dataset
-    data.edge_index = edge_index
-    torch.save(data, "data/german/processed/german_method_1.pt")
+    temp = torch.load("data/german/processed/german.pt")
+    temp[0].edge_index = edge_index
+
+    torch.save(temp, "data/german/processed/german_modified.pt")

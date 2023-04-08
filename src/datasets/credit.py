@@ -129,6 +129,7 @@ credit = CreditDataset(transform=T.Compose([T.ToDevice(device), T.ToUndirected()
 credit_aware = CreditAwareDataset(
     transform=T.Compose([T.ToDevice(device), T.ToUndirected()])
 )
+credit_modified = credit_aware
 
 credit_link_pred = CreditDataset(
     transform=T.Compose(

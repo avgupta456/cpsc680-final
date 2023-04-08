@@ -126,6 +126,7 @@ bail = BailDataset(transform=T.Compose([T.ToDevice(device), T.ToUndirected()]))
 bail_aware = BailAwareDataset(
     transform=T.Compose([T.ToDevice(device), T.ToUndirected()])
 )
+bail_modified = bail_aware
 
 bail_link_pred = BailDataset(
     transform=T.Compose(

@@ -1,3 +1,5 @@
+import tqdm
+
 import torch
 import torch.nn.functional as F
 import torchmetrics
@@ -84,7 +86,7 @@ def run_node_gnn(model, data, mask, optimizer=None):
     return loss, acc, auc, f1
 
 
-def train_node_model(model, dataset, optimizer, epochs):
+def train_node_model(model, dataset, optimizer, epochs, debug):
     dataset_name = dataset.__class__.__name__
     model_name = repr(model)
     optimizer_name = optimizer.__class__.__name__
@@ -93,15 +95,18 @@ def train_node_model(model, dataset, optimizer, epochs):
 
     data = dataset[0]
     best_model = None
-    for epoch in range(epochs):
-        train_loss, train_acc, train_auc, train_f1 = run_node_gnn(
+
+    iterator = range(epochs) if debug else tqdm.tqdm(range(epochs))
+    for epoch in iterator:
+        train_loss, train_acc, _, _ = run_node_gnn(
             model, data, data.train_mask, optimizer
         )
         val_loss, val_acc, val_auc, val_f1 = run_node_gnn(model, data, data.val_mask)
 
-        print(
-            f"Epoch: {epoch}, Train Loss: {train_loss:.4f}, Train Acc: {train_acc:.4f}, Val Loss: {val_loss:.4f}, Val Acc: {val_acc:.4f}, Val Auc: {val_auc:.4f}, Val F1: {val_f1:.4f}"
-        )
+        if debug:
+            print(
+                f"Epoch: {epoch}, Train Loss: {train_loss:.4f}, Train Acc: {train_acc:.4f}, Val Loss: {val_loss:.4f}, Val Acc: {val_acc:.4f}, Val Auc: {val_auc:.4f}, Val F1: {val_f1:.4f}"
+            )
 
         if best_model is None or val_loss < best_model[0]:
             best_model = (val_loss, val_acc, model.state_dict())
@@ -115,7 +120,8 @@ def train_node_model(model, dataset, optimizer, epochs):
     )
     print()
 
+    model_name = f"{dataset_name}_{model_name}_{optimizer_name}_{epochs}.pt"
+
     # save model
-    torch.save(
-        model, f"models/{dataset_name}_{model_name}_{optimizer_name}_{epochs}.pt"
-    )
+    torch.save(model, f"models/{model_name}")
+    print(f"Saved model to models/{model_name}")

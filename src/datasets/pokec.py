@@ -161,6 +161,7 @@ pokec_z = PokecZDataset(transform=T.Compose([T.ToDevice(device), T.ToUndirected(
 pokec_z_aware = PokecZAwareDataset(
     transform=T.Compose([T.ToDevice(device), T.ToUndirected()])
 )
+pokec_z_modified = pokec_z_aware
 
 pokec_z_link_pred = PokecZDataset(
     transform=T.Compose(
@@ -181,6 +182,7 @@ pokec_n = PokecNDataset(transform=T.Compose([T.ToDevice(device), T.ToUndirected(
 pokec_n_aware = PokecNAwareDataset(
     transform=T.Compose([T.ToDevice(device), T.ToUndirected()])
 )
+pokec_n_modified = pokec_n_aware
 
 pokec_n_link_pred = PokecNDataset(
     transform=T.Compose(
