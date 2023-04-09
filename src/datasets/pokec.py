@@ -117,6 +117,23 @@ class PokecZAwareDataset(InMemoryDataset):
         torch.save(data, self.processed_paths[0])
 
 
+class PokecZModifiedDataset(InMemoryDataset):
+    def __init__(self, transform=None, pre_transform=None, pre_filter=None):
+        super().__init__("data/pokec", transform, pre_transform, pre_filter)
+        self.data, self.slices = torch.load(self.processed_paths[0])
+
+    @property
+    def raw_file_names(self):
+        return []
+
+    @property
+    def processed_file_names(self):
+        return "pokec_z_modified.pt"
+
+    def process(self):
+        pass
+
+
 class PokecNDataset(InMemoryDataset):
     def __init__(self, transform=None, pre_transform=None, pre_filter=None):
         super().__init__("data/pokec", transform, pre_transform, pre_filter)
@@ -157,11 +174,35 @@ class PokecNAwareDataset(InMemoryDataset):
         torch.save(data, self.processed_paths[0])
 
 
+class PokecNModifiedDataset(InMemoryDataset):
+    def __init__(self, transform=None, pre_transform=None, pre_filter=None):
+        super().__init__("data/pokec", transform, pre_transform, pre_filter)
+
+        self.data, self.slices = torch.load(self.processed_paths[0])
+
+    @property
+    def raw_file_names(self):
+        return []
+
+    @property
+    def processed_file_names(self):
+        return "pokec_n_modified.pt"
+
+    def process(self):
+        pass
+
+
 pokec_z = PokecZDataset(transform=T.Compose([T.ToDevice(device), T.ToUndirected()]))
 pokec_z_aware = PokecZAwareDataset(
     transform=T.Compose([T.ToDevice(device), T.ToUndirected()])
 )
-pokec_z_modified = pokec_z_aware
+
+try:
+    pokec_z_modified = PokecZModifiedDataset(
+        transform=T.Compose([T.ToDevice(device), T.ToUndirected()])
+    )
+except FileNotFoundError:
+    pokec_z_modified = pokec_z
 
 pokec_z_link_pred = PokecZDataset(
     transform=T.Compose(
@@ -182,7 +223,13 @@ pokec_n = PokecNDataset(transform=T.Compose([T.ToDevice(device), T.ToUndirected(
 pokec_n_aware = PokecNAwareDataset(
     transform=T.Compose([T.ToDevice(device), T.ToUndirected()])
 )
-pokec_n_modified = pokec_n_aware
+
+try:
+    pokec_n_modified = PokecNModifiedDataset(
+        transform=T.Compose([T.ToDevice(device), T.ToUndirected()])
+    )
+except FileNotFoundError:
+    pokec_n_modified = pokec_n
 
 pokec_n_link_pred = PokecNDataset(
     transform=T.Compose(

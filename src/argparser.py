@@ -102,7 +102,11 @@ def parse_vanilla_args(args):
                 bail_modified if args.modified else (bail_aware if args.aware else bail)
             )
         elif args.dataset == "credit":
-            dataset = credit_aware if args.aware else credit
+            dataset = (
+                credit_modified
+                if args.modified
+                else (credit_aware if args.aware else credit)
+            )
         elif args.dataset == "german":
             dataset = (
                 german_modified

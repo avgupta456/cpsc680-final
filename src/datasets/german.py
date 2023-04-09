@@ -153,9 +153,13 @@ german = GermanDataset(transform=T.Compose([T.ToDevice(device), T.ToUndirected()
 german_aware = GermanAwareDataset(
     transform=T.Compose([T.ToDevice(device), T.ToUndirected()])
 )
-german_modified = GermanModifiedDataset(
-    transform=T.Compose([T.ToDevice(device), T.ToUndirected()])
-)
+
+try:
+    german_modified = GermanModifiedDataset(
+        transform=T.Compose([T.ToDevice(device), T.ToUndirected()])
+    )
+except FileNotFoundError:
+    german_modified = german
 
 german_link_pred = GermanDataset(
     transform=T.Compose(

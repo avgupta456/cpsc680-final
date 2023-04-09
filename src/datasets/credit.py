@@ -125,11 +125,34 @@ class CreditAwareDataset(InMemoryDataset):
         torch.save(data, self.processed_paths[0])
 
 
+class CreditModifiedDataset(InMemoryDataset):
+    def __init__(self, transform=None, pre_transform=None, pre_filter=None):
+        super().__init__("data/credit", transform, pre_transform, pre_filter)
+        self.data, self.slices = torch.load(self.processed_paths[0])
+
+    @property
+    def raw_file_names(self):
+        return []
+
+    @property
+    def processed_file_names(self):
+        return "credit_modified.pt"
+
+    def process(self):
+        pass
+
+
 credit = CreditDataset(transform=T.Compose([T.ToDevice(device), T.ToUndirected()]))
 credit_aware = CreditAwareDataset(
     transform=T.Compose([T.ToDevice(device), T.ToUndirected()])
 )
-credit_modified = credit_aware
+
+try:
+    credit_modified = CreditModifiedDataset(
+        transform=T.Compose([T.ToDevice(device), T.ToUndirected()])
+    )
+except FileNotFoundError:
+    credit_modified = credit
 
 credit_link_pred = CreditDataset(
     transform=T.Compose(

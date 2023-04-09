@@ -1,11 +1,11 @@
 import matplotlib.pyplot as plt
 import torch
 
-from src.datasets import german
+from src.argparser import get_args, parse_vanilla_args
 
 
 def histogram(data_arr, label_arr, bins=100, density=True, alpha=0.5):
-    fig, ax = plt.subplots()
+    _, ax = plt.subplots()
     for data, label in zip(data_arr, label_arr):
         ax.hist(
             data,
@@ -19,13 +19,15 @@ def histogram(data_arr, label_arr, bins=100, density=True, alpha=0.5):
 
 
 if __name__ == "__main__":
-    plot = False
+    args = get_args()
+    _, _, dataset, _, _, _ = parse_vanilla_args(args)
 
-    node_model = torch.load("models/GermanDataset_Node_GCNConv(16,1)_Adam_1000.pt")
-    edge_model = torch.load("models/GermanDataset_Edge_GCNConv(16)_Adam_1000.pt")
+    plot = True
 
-    data = german[0]
+    node_model = torch.load("models/CreditDataset_Node_GCNConv(16,1)_Adam_100.pt")
+    edge_model = torch.load("models/CreditDataset_Edge_GCNConv(16)_Adam_100.pt")
 
+    data = dataset[0]
     edge_prob_1 = edge_model(data.x, data.edge_index, data.edge_index).sigmoid()
     edge_prob_2 = edge_model.decode(
         node_model.embedding(data.x, data.edge_index), data.edge_index
@@ -62,13 +64,16 @@ if __name__ == "__main__":
     edge_prob = edge_prob_1
 
     # Remove homophily edges with low edge probability
-    edge_index = data.edge_index[:, ~(edge_homophily & (edge_prob < 0.5))]
+    edge_index = data.edge_index[:, ~(edge_homophily & (edge_prob < 0.7))]
 
     print(
         f"Removed {data.edge_index.shape[1] - edge_index.shape[1]} edges (out of {data.edge_index.shape[1]})"
     )
 
-    temp = torch.load("data/german/processed/german.pt")
+    dataset_name = args.dataset
+    folder_name = "pokec" if "pokec" in dataset_name else dataset_name
+
+    temp = torch.load(f"data/{folder_name}/processed/{dataset_name}.pt")
     temp[0].edge_index = edge_index
 
-    torch.save(temp, "data/german/processed/german_modified.pt")
+    torch.save(temp, f"data/{folder_name}/processed/{dataset_name}_modified.pt")

@@ -122,11 +122,34 @@ class BailAwareDataset(InMemoryDataset):
         torch.save(data, self.processed_paths[0])
 
 
+class BailModifiedDataset(InMemoryDataset):
+    def __init__(self, transform=None, pre_transform=None, pre_filter=None):
+        super().__init__("data/bail", transform, pre_transform, pre_filter)
+        self.data, self.slices = torch.load(self.processed_paths[0])
+
+    @property
+    def raw_file_names(self):
+        return []
+
+    @property
+    def processed_file_names(self):
+        return "bail_modified.pt"
+
+    def process(self):
+        pass
+
+
 bail = BailDataset(transform=T.Compose([T.ToDevice(device), T.ToUndirected()]))
 bail_aware = BailAwareDataset(
     transform=T.Compose([T.ToDevice(device), T.ToUndirected()])
 )
-bail_modified = bail_aware
+
+try:
+    bail_modified = BailModifiedDataset(
+        transform=T.Compose([T.ToDevice(device), T.ToUndirected()])
+    )
+except FileNotFoundError:
+    bail_modified = bail
 
 bail_link_pred = BailDataset(
     transform=T.Compose(
