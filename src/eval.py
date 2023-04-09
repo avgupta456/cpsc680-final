@@ -1,25 +1,8 @@
-import numpy as np
 import torchmetrics
 
 from src.argparser import get_args, parse_metric_args
-
-
-def fair_metric(labels, sens, output, idx):
-    val_y = labels[idx].cpu().numpy()
-    idx_s0 = sens.cpu().numpy()[idx.cpu().numpy()] == 0
-    idx_s1 = sens.cpu().numpy()[idx.cpu().numpy()] == 1
-
-    idx_s0_y1 = np.bitwise_and(idx_s0, val_y == 1)
-    idx_s1_y1 = np.bitwise_and(idx_s1, val_y == 1)
-
-    pred_y = (output[idx].squeeze() > 0.5).type_as(labels).cpu().numpy()
-    parity = abs(sum(pred_y[idx_s0]) / sum(idx_s0) - sum(pred_y[idx_s1]) / sum(idx_s1))
-    equality = abs(
-        sum(pred_y[idx_s0_y1]) / sum(idx_s0_y1)
-        - sum(pred_y[idx_s1_y1]) / sum(idx_s1_y1)
-    )
-
-    return parity, equality
+from src.metrics.fairness import get_parity, get_equality
+from src.metrics.bias import get_attribute_bias
 
 
 def eval_model(data, model):
@@ -36,7 +19,9 @@ def eval_model(data, model):
     f1 = torchmetrics.functional.f1_score(
         output[idx].squeeze(), labels[idx].to(int), task="binary"
     )
-    parity, equality = fair_metric(labels, sens, output, idx)
+    parity = get_parity(labels, sens, output, idx)
+    equality = get_equality(labels, sens, output, idx)
+    attribute_bias = get_attribute_bias(data.x, sens)
 
     print("Test set results:")
     print(f"Accuracy: {acc:.4f}")
@@ -44,6 +29,11 @@ def eval_model(data, model):
     print(f"F1: {f1:.4f}")
     print(f"Parity: {parity:.4f}")
     print(f"Equality: {equality:.4f}")
+    print()
+
+    print("Graph bias results:")
+    print(f"Attribute bias: {attribute_bias:.4f}")
+    print()
 
 
 if __name__ == "__main__":
