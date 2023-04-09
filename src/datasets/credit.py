@@ -4,9 +4,8 @@ import numpy as np
 import pandas as pd
 import torch
 from torch_geometric.data import Data, InMemoryDataset
-import torch_geometric.transforms as T
 
-from src.utils import device
+from src.datasets.shared import transform, link_transform
 
 
 def load_credit_data(aware):
@@ -142,29 +141,12 @@ class CreditModifiedDataset(InMemoryDataset):
         pass
 
 
-credit = CreditDataset(transform=T.Compose([T.ToDevice(device), T.ToUndirected()]))
-credit_aware = CreditAwareDataset(
-    transform=T.Compose([T.ToDevice(device), T.ToUndirected()])
-)
+credit = CreditDataset(transform=transform)
+credit_aware = CreditAwareDataset(transform=transform)
 
 try:
-    credit_modified = CreditModifiedDataset(
-        transform=T.Compose([T.ToDevice(device), T.ToUndirected()])
-    )
+    credit_modified = CreditModifiedDataset(transform=transform)
 except FileNotFoundError:
     credit_modified = credit
 
-credit_link_pred = CreditDataset(
-    transform=T.Compose(
-        [
-            T.ToDevice(device),
-            T.ToUndirected(),
-            T.RandomLinkSplit(
-                num_val=0.1,
-                num_test=0.1,
-                is_undirected=True,
-                add_negative_train_samples=False,
-            ),
-        ]
-    ),
-)
+credit_link_pred = CreditDataset(transform=link_transform)

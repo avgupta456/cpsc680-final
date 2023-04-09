@@ -4,9 +4,8 @@ import numpy as np
 import pandas as pd
 import torch
 from torch_geometric.data import Data, InMemoryDataset
-import torch_geometric.transforms as T
 
-from src.utils import device
+from src.datasets.shared import transform, link_transform
 
 
 def load_bail_data(aware):
@@ -67,7 +66,7 @@ def load_bail_data(aware):
     test_mask = np.zeros(labels.shape, dtype=bool)
     test_mask[test_idx] = True
 
-    # Normalize features to have mean 0 and std 1
+    # Normalize features to range [-1, 1]
     mean, std = features[train_mask].mean(axis=0), features[train_mask].std(axis=0)
     features = (features - mean) / std
 
@@ -139,29 +138,12 @@ class BailModifiedDataset(InMemoryDataset):
         pass
 
 
-bail = BailDataset(transform=T.Compose([T.ToDevice(device), T.ToUndirected()]))
-bail_aware = BailAwareDataset(
-    transform=T.Compose([T.ToDevice(device), T.ToUndirected()])
-)
+bail = BailDataset(transform=transform)
+bail_aware = BailAwareDataset(transform=transform)
 
 try:
-    bail_modified = BailModifiedDataset(
-        transform=T.Compose([T.ToDevice(device), T.ToUndirected()])
-    )
+    bail_modified = BailModifiedDataset(transform=transform)
 except FileNotFoundError:
     bail_modified = bail
 
-bail_link_pred = BailDataset(
-    transform=T.Compose(
-        [
-            T.ToDevice(device),
-            T.ToUndirected(),
-            T.RandomLinkSplit(
-                num_val=0.1,
-                num_test=0.1,
-                is_undirected=True,
-                add_negative_train_samples=False,
-            ),
-        ]
-    ),
-)
+bail_link_pred = BailDataset(transform=link_transform)

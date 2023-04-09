@@ -4,9 +4,8 @@ import numpy as np
 import pandas as pd
 import torch
 from torch_geometric.data import Data, InMemoryDataset
-import torch_geometric.transforms as T
 
-from src.utils import device
+from src.datasets.shared import transform, link_transform
 
 
 def load_pokec_data(suffix, aware):
@@ -192,56 +191,22 @@ class PokecNModifiedDataset(InMemoryDataset):
         pass
 
 
-pokec_z = PokecZDataset(transform=T.Compose([T.ToDevice(device), T.ToUndirected()]))
-pokec_z_aware = PokecZAwareDataset(
-    transform=T.Compose([T.ToDevice(device), T.ToUndirected()])
-)
+pokec_z = PokecZDataset(transform=transform)
+pokec_z_aware = PokecZAwareDataset(transform=transform)
 
 try:
-    pokec_z_modified = PokecZModifiedDataset(
-        transform=T.Compose([T.ToDevice(device), T.ToUndirected()])
-    )
+    pokec_z_modified = PokecZModifiedDataset(transform=transform)
 except FileNotFoundError:
     pokec_z_modified = pokec_z
 
-pokec_z_link_pred = PokecZDataset(
-    transform=T.Compose(
-        [
-            T.ToDevice(device),
-            T.ToUndirected(),
-            T.RandomLinkSplit(
-                num_val=0.1,
-                num_test=0.1,
-                is_undirected=True,
-                add_negative_train_samples=False,
-            ),
-        ]
-    )
-)
+pokec_z_link_pred = PokecZDataset(transform=link_transform)
 
-pokec_n = PokecNDataset(transform=T.Compose([T.ToDevice(device), T.ToUndirected()]))
-pokec_n_aware = PokecNAwareDataset(
-    transform=T.Compose([T.ToDevice(device), T.ToUndirected()])
-)
+pokec_n = PokecNDataset(transform=transform)
+pokec_n_aware = PokecNAwareDataset(transform=transform)
 
 try:
-    pokec_n_modified = PokecNModifiedDataset(
-        transform=T.Compose([T.ToDevice(device), T.ToUndirected()])
-    )
+    pokec_n_modified = PokecNModifiedDataset(transform=transform)
 except FileNotFoundError:
     pokec_n_modified = pokec_n
 
-pokec_n_link_pred = PokecNDataset(
-    transform=T.Compose(
-        [
-            T.ToDevice(device),
-            T.ToUndirected(),
-            T.RandomLinkSplit(
-                num_val=0.1,
-                num_test=0.1,
-                is_undirected=True,
-                add_negative_train_samples=False,
-            ),
-        ]
-    )
-)
+pokec_n_link_pred = PokecNDataset(transform=link_transform)

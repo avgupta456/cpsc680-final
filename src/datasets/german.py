@@ -4,9 +4,8 @@ import numpy as np
 import pandas as pd
 import torch
 from torch_geometric.data import Data, InMemoryDataset
-import torch_geometric.transforms as T
 
-from src.utils import device
+from src.datasets.shared import transform, link_transform
 
 
 def load_german_data(aware):
@@ -149,29 +148,12 @@ class GermanModifiedDataset(InMemoryDataset):
         pass
 
 
-german = GermanDataset(transform=T.Compose([T.ToDevice(device), T.ToUndirected()]))
-german_aware = GermanAwareDataset(
-    transform=T.Compose([T.ToDevice(device), T.ToUndirected()])
-)
+german = GermanDataset(transform=transform)
+german_aware = GermanAwareDataset(transform=transform)
 
 try:
-    german_modified = GermanModifiedDataset(
-        transform=T.Compose([T.ToDevice(device), T.ToUndirected()])
-    )
+    german_modified = GermanModifiedDataset(transform=transform)
 except FileNotFoundError:
     german_modified = german
 
-german_link_pred = GermanDataset(
-    transform=T.Compose(
-        [
-            T.ToDevice(device),
-            T.ToUndirected(),
-            T.RandomLinkSplit(
-                num_val=0.1,
-                num_test=0.1,
-                is_undirected=True,
-                add_negative_train_samples=False,
-            ),
-        ]
-    ),
-)
+german_link_pred = GermanDataset(transform=link_transform)
