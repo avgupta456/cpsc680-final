@@ -66,7 +66,12 @@ def load_bail_data(aware):
     test_mask = np.zeros(labels.shape, dtype=bool)
     test_mask[test_idx] = True
 
-    # Normalize features to range [-1, 1]
+    # Normalize features to range [-1, 1], used in EDITS but leaks data
+    # min_values = features.min(axis=0)
+    # max_values = features.max(axis=0)
+    # features = 2 * (features - min_values) / (max_values - min_values) - 1
+
+    # Normalize features to mean 0 and std 1
     mean, std = features[train_mask].mean(axis=0), features[train_mask].std(axis=0)
     features = (features - mean) / std
 

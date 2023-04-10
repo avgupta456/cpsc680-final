@@ -1,8 +1,27 @@
+import torch
 import torchmetrics
 
-from src.argparser import get_args, parse_metric_args
+from src.argparser import get_args, parse_args
 from src.metrics.fairness import get_parity, get_equality
-from src.metrics.bias import get_attribute_bias
+from src.metrics.bias import get_attribute_bias, get_structural_bias
+from src.metrics.homophily import get_edge_homophily, get_node_homophily
+
+
+def eval_dataset(data):
+    sens = data.sens_attrs.flatten()
+
+    edge_homophily = get_edge_homophily(data.edge_index, sens)
+    node_homophily = get_node_homophily(data.edge_index, sens)
+
+    attribute_bias = get_attribute_bias(data.x, sens)
+    structural_bias = get_structural_bias(data.x, data.edge_index, sens)
+
+    print("Graph bias results:")
+    print(f"Edge homophily: {edge_homophily:.4f}")
+    print(f"Node homophily: {node_homophily:.4f}")
+    print(f"Attribute bias: {attribute_bias:.4f}")
+    print(f"Structural bias: {structural_bias:.4f}")
+    print()
 
 
 def eval_model(data, model):
@@ -21,7 +40,6 @@ def eval_model(data, model):
     )
     parity = get_parity(labels, sens, output, idx)
     equality = get_equality(labels, sens, output, idx)
-    attribute_bias = get_attribute_bias(data.x, sens)
 
     print("Test set results:")
     print(f"Accuracy: {acc:.4f}")
@@ -31,13 +49,16 @@ def eval_model(data, model):
     print(f"Equality: {equality:.4f}")
     print()
 
-    print("Graph bias results:")
-    print(f"Attribute bias: {attribute_bias:.4f}")
-    print()
-
 
 if __name__ == "__main__":
     args = get_args()
-    dataset, model = parse_metric_args(args)
+    _, _, dataset_name, dataset, _, _, _ = parse_args(args)
 
-    eval_model(dataset[0], model)
+    eval_dataset(dataset[0])
+    print()
+
+    try:
+        model = torch.load(f"models/{dataset_name}.pt")
+        eval_model(dataset[0], model)
+    except FileNotFoundError:
+        print("Model not found. Skipping evaluation.")

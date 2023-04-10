@@ -78,7 +78,7 @@ def get_args():
     return argparser.parse_args()
 
 
-def parse_vanilla_args(args):
+def parse_args(args):
     set_random_seed(args.seed)
 
     block = None
@@ -92,6 +92,12 @@ def parse_vanilla_args(args):
         block = GINConv
     else:
         raise ValueError(f"Unknown model: {args.model}")
+
+    dataset_name = (
+        args.dataset
+        + ("_aware" if args.aware else "")
+        + ("_modified" if args.modified else "")
+    )
 
     dataset = None
     model = None
@@ -167,48 +173,4 @@ def parse_vanilla_args(args):
 
     debug = args.debug
 
-    return model, train_model, dataset, optimizer, epochs, debug
-
-
-def parse_metric_args(args):
-    set_random_seed(args.seed)
-
-    model_path = args.model_path
-    model = torch.load(f"models/{model_path}").to(device)
-
-    dataset_name = model_path.split("Dataset")[0]
-    dataset = None
-    if dataset_name == "Bail":
-        dataset = bail
-    elif dataset_name == "BailAware":
-        dataset = bail_aware
-    elif dataset_name == "BailModified":
-        dataset = bail_modified
-    elif dataset_name == "Credit":
-        dataset = credit
-    elif dataset_name == "CreditAware":
-        dataset = credit_aware
-    elif dataset_name == "CreditModified":
-        dataset = credit_modified
-    elif dataset_name == "German":
-        dataset = german
-    elif dataset_name == "GermanAware":
-        dataset = german_aware
-    elif dataset_name == "GermanModified":
-        dataset = german_modified
-    elif dataset_name == "PokecN":
-        dataset = pokec_n
-    elif dataset_name == "PokecNAware":
-        dataset = pokec_n_aware
-    elif dataset_name == "PokecNModified":
-        dataset = pokec_n_modified
-    elif dataset_name == "PokecZ":
-        dataset = pokec_z
-    elif dataset_name == "PokecZAware":
-        dataset = pokec_z_aware
-    elif dataset_name == "PokecZModified":
-        dataset = pokec_z_modified
-    else:
-        raise ValueError(f"Unknown dataset: {dataset_name}")
-
-    return dataset, model
+    return model, train_model, dataset_name, dataset, optimizer, epochs, debug

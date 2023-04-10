@@ -90,11 +90,7 @@ def run_edge_gnn(model, data, optimizer=None):
     return loss, acc, auc, f1
 
 
-def train_edge_model(model, dataset, optimizer, epochs, debug):
-    dataset_name = dataset.__class__.__name__
-    model_name = repr(model)
-    optimizer_name = optimizer.__class__.__name__
-
+def train_edge_model(model, dataset_name, dataset, optimizer, epochs, debug):
     print(f"Training {dataset_name} model...")
 
     train_data, val_data, test_data = dataset[0]
@@ -122,8 +118,5 @@ def train_edge_model(model, dataset, optimizer, epochs, debug):
     )
     print()
 
-    model_name = f"{dataset_name}_{model_name}_{optimizer_name}_{epochs}.pt"
-
     # save model
-    torch.save(model, f"models/{model_name}")
-    print(f"Saved model to models/{model_name}")
+    torch.save(model, f"models/{dataset_name}_edge.pt")

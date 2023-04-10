@@ -56,10 +56,6 @@ class VanillaNode(torch.nn.Module):
 
         return self.convs[-2](x, edge_index)
 
-    def __repr__(self):
-        # Ex. Node_GCNConv(16,32,32,1)
-        return f"Node_{self.block_name}({','.join([str(conv.out_channels) for conv in self.convs])})"
-
 
 def run_node_gnn(model, data, mask, optimizer=None):
     if optimizer:
@@ -86,11 +82,7 @@ def run_node_gnn(model, data, mask, optimizer=None):
     return loss, acc, auc, f1
 
 
-def train_node_model(model, dataset, optimizer, epochs, debug):
-    dataset_name = dataset.__class__.__name__
-    model_name = repr(model)
-    optimizer_name = optimizer.__class__.__name__
-
+def train_node_model(model, dataset_name, dataset, optimizer, epochs, debug):
     print(f"Training {dataset_name} model...")
 
     data = dataset[0]
@@ -120,8 +112,5 @@ def train_node_model(model, dataset, optimizer, epochs, debug):
     )
     print()
 
-    model_name = f"{dataset_name}_{model_name}_{optimizer_name}_{epochs}.pt"
-
     # save model
-    torch.save(model, f"models/{model_name}")
-    print(f"Saved model to models/{model_name}")
+    torch.save(model, f"models/{dataset_name}.pt")
