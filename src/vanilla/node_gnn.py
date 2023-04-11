@@ -65,19 +65,19 @@ def run_node_gnn(model, data, mask, optimizer=None):
         model.eval()
 
     out = model(data.x, data.edge_index)[mask]
-    pred = data.y[mask]
+    target = data.y[mask]
 
-    loss = F.binary_cross_entropy(out, pred)
+    loss = F.binary_cross_entropy(out, target)
 
     if optimizer:
         loss.backward()
         optimizer.step()
 
-    correct = out.round().eq(pred).sum().item()
+    correct = out.round().eq(target).sum().item()
     count = mask.sum().item()
     acc = correct / count
-    auc = torchmetrics.functional.auroc(out, pred.to(int), task="binary")
-    f1 = torchmetrics.functional.f1_score(out, pred.to(int), task="binary")
+    auc = torchmetrics.functional.auroc(out, target.to(int), task="binary")
+    f1 = torchmetrics.functional.f1_score(out, target.to(int), task="binary")
 
     return loss, acc, auc, f1
 

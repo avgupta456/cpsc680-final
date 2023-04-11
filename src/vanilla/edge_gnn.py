@@ -7,7 +7,7 @@ import torchmetrics
 from torch_geometric.nn import GCNConv, GATConv, SAGEConv, GINConv
 from torch_geometric.utils import negative_sampling
 
-from src.node_gnn import VanillaNode
+from src.vanilla.node_gnn import VanillaNode
 
 
 class VanillaEdge(torch.nn.Module):
@@ -119,4 +119,4 @@ def train_edge_model(model, dataset_name, dataset, optimizer, epochs, debug):
     print()
 
     # save model
-    torch.save(model, f"models/{dataset_name}_edge.pt")
+    torch.save(model, f"models/{dataset_name}.pt")
