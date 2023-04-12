@@ -61,9 +61,14 @@ def load_pokec_data(suffix, aware):
     test_mask = np.zeros(labels.shape, dtype=bool)
     test_mask[idx_test] = True
 
+    # Normalize features to range [-1, 1], used in EDITS but leaks data
+    min_values = features.min(axis=0)
+    max_values = features.max(axis=0)
+    features = 2 * (features - min_values) / (max_values - min_values) - 1
+
     # Normalize features to have mean 0 and std 1
-    mean, std = features[train_mask].mean(axis=0), features[train_mask].std(axis=0)
-    features = (features - mean) / std
+    # mean, std = features[train_mask].mean(axis=0), features[train_mask].std(axis=0)
+    # features = (features - mean) / std
 
     data = Data(
         x=torch.from_numpy(features).float(),
@@ -92,7 +97,7 @@ class PokecZDataset(InMemoryDataset):
         return "pokec_z.pt"
 
     def process(self):
-        data: Data = load_pokec_data(suffix="")
+        data: Data = load_pokec_data(suffix="", aware=False)
         data = self.collate([data])
         torch.save(data, self.processed_paths[0])
 
@@ -148,7 +153,7 @@ class PokecNDataset(InMemoryDataset):
         return "pokec_n.pt"
 
     def process(self):
-        data: Data = load_pokec_data(suffix="_2")
+        data: Data = load_pokec_data(suffix="_2", aware=False)
         data = self.collate([data])
         torch.save(data, self.processed_paths[0])
 

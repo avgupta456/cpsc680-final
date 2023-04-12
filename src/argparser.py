@@ -1,5 +1,3 @@
-import torch
-
 from src.utils import set_random_seed
 from src.datasets import (
     bail,
@@ -110,8 +108,6 @@ def parse_dataset_args(args):
 
 def parse_misc_args(args):
     set_random_seed(args.seed)
-    cuda = not args.no_cuda and torch.cuda.is_available()
-    device = torch.device("cuda" if cuda else "cpu")
     debug = args.debug
 
-    return device, debug
+    return debug

@@ -64,8 +64,8 @@ def run_encoder(
         classifier_pred, classifier_target, weight=classifier_weight
     )
 
-    encoder_loss = decoder_loss - classifier_loss
-    # encoder_loss = decoder_loss + classifier_loss
+    encoder_loss = -classifier_loss
+    # encoder_loss = decoder_loss
 
     if optimizer:
         encoder_loss.backward()
@@ -91,11 +91,19 @@ def run_decoder(encoder, decoder, data, mask, optimizer=None):
     # Decoder wants to reconstruct the input
     decoder_loss = F.mse_loss(decoder_pred, decoder_target)
 
+    l1_penalty = 0
+    N_params = 0
+    for param in list(encoder.parameters()) + list(decoder.parameters()):
+        l1_penalty += torch.abs(param).sum()
+        N_params += param.numel()
+    l1_penalty = 0.05 * l1_penalty / N_params
+    decoder_loss += l1_penalty
+
     if optimizer:
         decoder_loss.backward()
         optimizer.step()
 
-    return decoder_loss
+    return decoder_loss - l1_penalty
 
 
 def run_classifier(encoder, classifier, data, mask, classifier_weight, optimizer=None):

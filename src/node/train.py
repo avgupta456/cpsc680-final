@@ -7,22 +7,26 @@ if __name__ == "__main__":
     args = get_args()
     debug, dataset, dataset_name = parse_args(args)
 
-    print(dataset, dataset_name)
-
     N = dataset.num_features
 
-    encoder = MLP(N, [N], N, 0)
-    decoder = MLP(N, [N], N, 0)
-    classifier = MLP(N, [N // 2], 1, 0, True)
+    M = min(N, 32)
 
-    encoder_optimizer = torch.optim.Adam(
-        encoder.parameters(), lr=1e-3, weight_decay=1e-3
-    )
+    mid = (N + M) // 2
+
+    encoder = MLP(N, [mid], M, 0)
+    decoder = MLP(M, [mid], N, 0)
+    classifier = MLP(M, [M // 4], 1, 0, True)
+
+    print(N, M, mid)
+
+    encoder_optimizer = torch.optim.Adam(encoder.parameters(), lr=0, weight_decay=1e-3)
     decoder_optimizer = torch.optim.Adam(
-        decoder.parameters(), lr=1e-3, weight_decay=1e-3
+        list(encoder.parameters()) + list(decoder.parameters()),
+        lr=3e-3,
+        weight_decay=0,
     )
     classifier_optimizer = torch.optim.Adam(
-        classifier.parameters(), lr=1e-3, weight_decay=1e-3
+        classifier.parameters(), lr=1e-3, weight_decay=5e-2
     )
 
     torch.autograd.set_detect_anomaly(True)
@@ -40,8 +44,8 @@ if __name__ == "__main__":
         debug,
     )
 
-    print(classifier(encoder(dataset[0].x)))
-    print(classifier(encoder(dataset[0].x)).mean())
+    pred = classifier(encoder(dataset.x))
+    actual = dataset[0].sens_attrs.to(float)
 
-    print(dataset[0].sens_attrs)
-    print(dataset[0].sens_attrs.to(float).mean())
+    print(actual[pred > 0.5].mean())
+    print(actual[pred < 0.5].mean())

@@ -1,10 +1,10 @@
 import torch
 import torchmetrics
 
-from src.argparser import get_args, parse_args
-from src.metrics.fairness import get_parity, get_equality
-from src.metrics.bias import get_attribute_bias, get_structural_bias
-from src.metrics.homophily import get_edge_homophily, get_node_homophily
+from src.eval.argparser import get_args, parse_args
+from src.eval.fairness import get_parity, get_equality
+from src.eval.bias import get_attribute_bias, get_structural_bias
+from src.eval.homophily import get_edge_homophily, get_node_homophily
 
 
 def eval_dataset(data):
@@ -52,7 +52,7 @@ def eval_model(data, model):
 
 if __name__ == "__main__":
     args = get_args()
-    _, _, dataset_name, dataset, _, _, _ = parse_args(args)
+    dataset, dataset_name, debug = parse_args(args)
 
     eval_dataset(dataset[0])
     print()
