@@ -84,9 +84,14 @@ def load_pokec_data(suffix, aware):
 
 
 class PokecZDataset(InMemoryDataset):
-    def __init__(self, transform=None, pre_transform=None, pre_filter=None):
+    def __init__(
+        self, transform=None, pre_transform=None, pre_filter=None, filename=None
+    ):
         super().__init__("data/pokec", transform, pre_transform, pre_filter)
-        self.data, self.slices = torch.load(self.processed_paths[0])
+        if filename is not None:
+            self.data, self.slices = torch.load(filename)
+        else:
+            self.data, self.slices = torch.load(self.processed_paths[0])
 
     @property
     def raw_file_names(self):
@@ -103,9 +108,14 @@ class PokecZDataset(InMemoryDataset):
 
 
 class PokecZAwareDataset(InMemoryDataset):
-    def __init__(self, transform=None, pre_transform=None, pre_filter=None):
+    def __init__(
+        self, transform=None, pre_transform=None, pre_filter=None, filename=None
+    ):
         super().__init__("data/pokec", transform, pre_transform, pre_filter)
-        self.data, self.slices = torch.load(self.processed_paths[0])
+        if filename is not None:
+            self.data, self.slices = torch.load(filename)
+        else:
+            self.data, self.slices = torch.load(self.processed_paths[0])
 
     @property
     def raw_file_names(self):
@@ -121,28 +131,15 @@ class PokecZAwareDataset(InMemoryDataset):
         torch.save(data, self.processed_paths[0])
 
 
-class PokecZModifiedDataset(InMemoryDataset):
-    def __init__(self, transform=None, pre_transform=None, pre_filter=None):
-        super().__init__("data/pokec", transform, pre_transform, pre_filter)
-        self.data, self.slices = torch.load(self.processed_paths[0])
-
-    @property
-    def raw_file_names(self):
-        return []
-
-    @property
-    def processed_file_names(self):
-        return "pokec_z_modified.pt"
-
-    def process(self):
-        pass
-
-
 class PokecNDataset(InMemoryDataset):
-    def __init__(self, transform=None, pre_transform=None, pre_filter=None):
+    def __init__(
+        self, transform=None, pre_transform=None, pre_filter=None, filename=None
+    ):
         super().__init__("data/pokec", transform, pre_transform, pre_filter)
-
-        self.data, self.slices = torch.load(self.processed_paths[0])
+        if filename is not None:
+            self.data, self.slices = torch.load(filename)
+        else:
+            self.data, self.slices = torch.load(self.processed_paths[0])
 
     @property
     def raw_file_names(self):
@@ -159,10 +156,14 @@ class PokecNDataset(InMemoryDataset):
 
 
 class PokecNAwareDataset(InMemoryDataset):
-    def __init__(self, transform=None, pre_transform=None, pre_filter=None):
+    def __init__(
+        self, transform=None, pre_transform=None, pre_filter=None, filename=None
+    ):
         super().__init__("data/pokec", transform, pre_transform, pre_filter)
-
-        self.data, self.slices = torch.load(self.processed_paths[0])
+        if filename is not None:
+            self.data, self.slices = torch.load(filename)
+        else:
+            self.data, self.slices = torch.load(self.processed_paths[0])
 
     @property
     def raw_file_names(self):
@@ -178,31 +179,15 @@ class PokecNAwareDataset(InMemoryDataset):
         torch.save(data, self.processed_paths[0])
 
 
-class PokecNModifiedDataset(InMemoryDataset):
-    def __init__(self, transform=None, pre_transform=None, pre_filter=None):
-        super().__init__("data/pokec", transform, pre_transform, pre_filter)
-
-        self.data, self.slices = torch.load(self.processed_paths[0])
-
-    @property
-    def raw_file_names(self):
-        return []
-
-    @property
-    def processed_file_names(self):
-        return "pokec_n_modified.pt"
-
-    def process(self):
-        pass
-
-
 pokec_z = PokecZDataset(transform=transform)
 pokec_z_aware = PokecZAwareDataset(transform=transform)
 
 try:
-    pokec_z_modified = PokecZModifiedDataset(transform=transform)
+    pokec_z_node = PokecZDataset(
+        transform=transform, filename="./data/pokec/processed/pokec_z_node.pt"
+    )
 except FileNotFoundError:
-    pokec_z_modified = pokec_z
+    pokec_z_node = pokec_z
 
 pokec_z_link_pred = PokecZDataset(transform=link_transform)
 
@@ -210,8 +195,10 @@ pokec_n = PokecNDataset(transform=transform)
 pokec_n_aware = PokecNAwareDataset(transform=transform)
 
 try:
-    pokec_n_modified = PokecNModifiedDataset(transform=transform)
+    pokec_n_node = PokecNDataset(
+        transform=transform, filename="./data/pokec/processed/pokec_n_node.pt"
+    )
 except FileNotFoundError:
-    pokec_n_modified = pokec_n
+    pokec_n_node = pokec_n
 
 pokec_n_link_pred = PokecNDataset(transform=link_transform)

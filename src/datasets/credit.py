@@ -92,9 +92,14 @@ def load_credit_data(aware):
 
 
 class CreditDataset(InMemoryDataset):
-    def __init__(self, transform=None, pre_transform=None, pre_filter=None):
+    def __init__(
+        self, transform=None, pre_transform=None, pre_filter=None, filename=None
+    ):
         super().__init__("data/credit", transform, pre_transform, pre_filter)
-        self.data, self.slices = torch.load(self.processed_paths[0])
+        if filename is not None:
+            self.data, self.slices = torch.load(filename)
+        else:
+            self.data, self.slices = torch.load(self.processed_paths[0])
 
     @property
     def raw_file_names(self):
@@ -111,9 +116,14 @@ class CreditDataset(InMemoryDataset):
 
 
 class CreditAwareDataset(InMemoryDataset):
-    def __init__(self, transform=None, pre_transform=None, pre_filter=None):
+    def __init__(
+        self, transform=None, pre_transform=None, pre_filter=None, filename=None
+    ):
         super().__init__("data/credit", transform, pre_transform, pre_filter)
-        self.data, self.slices = torch.load(self.processed_paths[0])
+        if filename is not None:
+            self.data, self.slices = torch.load(filename)
+        else:
+            self.data, self.slices = torch.load(self.processed_paths[0])
 
     @property
     def raw_file_names(self):
@@ -129,29 +139,14 @@ class CreditAwareDataset(InMemoryDataset):
         torch.save(data, self.processed_paths[0])
 
 
-class CreditModifiedDataset(InMemoryDataset):
-    def __init__(self, transform=None, pre_transform=None, pre_filter=None):
-        super().__init__("data/credit", transform, pre_transform, pre_filter)
-        self.data, self.slices = torch.load(self.processed_paths[0])
-
-    @property
-    def raw_file_names(self):
-        return []
-
-    @property
-    def processed_file_names(self):
-        return "credit_modified.pt"
-
-    def process(self):
-        pass
-
-
 credit = CreditDataset(transform=transform)
 credit_aware = CreditAwareDataset(transform=transform)
 
 try:
-    credit_modified = CreditModifiedDataset(transform=transform)
+    credit_node = CreditDataset(
+        transform=transform, filename="./data/credit/processed/credit_node.pt"
+    )
 except FileNotFoundError:
-    credit_modified = credit
+    credit_node = credit
 
 credit_link_pred = CreditDataset(transform=link_transform)

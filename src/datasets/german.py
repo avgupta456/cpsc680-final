@@ -99,9 +99,14 @@ def load_german_data(aware):
 
 
 class GermanDataset(InMemoryDataset):
-    def __init__(self, transform=None, pre_transform=None, pre_filter=None):
+    def __init__(
+        self, transform=None, pre_transform=None, pre_filter=None, filename=None
+    ):
         super().__init__("data/german", transform, pre_transform, pre_filter)
-        self.data, self.slices = torch.load(self.processed_paths[0])
+        if filename is not None:
+            self.data, self.slices = torch.load(filename)
+        else:
+            self.data, self.slices = torch.load(self.processed_paths[0])
 
     @property
     def raw_file_names(self):
@@ -118,9 +123,14 @@ class GermanDataset(InMemoryDataset):
 
 
 class GermanAwareDataset(InMemoryDataset):
-    def __init__(self, transform=None, pre_transform=None, pre_filter=None):
+    def __init__(
+        self, transform=None, pre_transform=None, pre_filter=None, filename=None
+    ):
         super().__init__("data/german", transform, pre_transform, pre_filter)
-        self.data, self.slices = torch.load(self.processed_paths[0])
+        if filename is not None:
+            self.data, self.slices = torch.load(filename)
+        else:
+            self.data, self.slices = torch.load(self.processed_paths[0])
 
     @property
     def raw_file_names(self):
@@ -136,29 +146,14 @@ class GermanAwareDataset(InMemoryDataset):
         torch.save(data, self.processed_paths[0])
 
 
-class GermanModifiedDataset(InMemoryDataset):
-    def __init__(self, transform=None, pre_transform=None, pre_filter=None):
-        super().__init__("data/german", transform, pre_transform, pre_filter)
-        self.data, self.slices = torch.load(self.processed_paths[0])
-
-    @property
-    def raw_file_names(self):
-        return []
-
-    @property
-    def processed_file_names(self):
-        return "german_modified.pt"
-
-    def process(self):
-        pass
-
-
 german = GermanDataset(transform=transform)
 german_aware = GermanAwareDataset(transform=transform)
 
 try:
-    german_modified = GermanModifiedDataset(transform=transform)
+    german_node = GermanDataset(
+        transform=transform, filename="./data/german/processed/german_node.pt"
+    )
 except FileNotFoundError:
-    german_modified = german
+    german_node = german
 
 german_link_pred = GermanDataset(transform=link_transform)

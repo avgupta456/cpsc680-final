@@ -89,9 +89,14 @@ def load_bail_data(aware):
 
 
 class BailDataset(InMemoryDataset):
-    def __init__(self, transform=None, pre_transform=None, pre_filter=None):
+    def __init__(
+        self, transform=None, pre_transform=None, pre_filter=None, filename=None
+    ):
         super().__init__("data/bail", transform, pre_transform, pre_filter)
-        self.data, self.slices = torch.load(self.processed_paths[0])
+        if filename is not None:
+            self.data, self.slices = torch.load(filename)
+        else:
+            self.data, self.slices = torch.load(self.processed_paths[0])
 
     @property
     def raw_file_names(self):
@@ -108,9 +113,14 @@ class BailDataset(InMemoryDataset):
 
 
 class BailAwareDataset(InMemoryDataset):
-    def __init__(self, transform=None, pre_transform=None, pre_filter=None):
+    def __init__(
+        self, transform=None, pre_transform=None, pre_filter=None, filename=None
+    ):
         super().__init__("data/bail", transform, pre_transform, pre_filter)
-        self.data, self.slices = torch.load(self.processed_paths[0])
+        if filename is not None:
+            self.data, self.slices = torch.load(filename)
+        else:
+            self.data, self.slices = torch.load(self.processed_paths[0])
 
     @property
     def raw_file_names(self):
@@ -126,29 +136,14 @@ class BailAwareDataset(InMemoryDataset):
         torch.save(data, self.processed_paths[0])
 
 
-class BailModifiedDataset(InMemoryDataset):
-    def __init__(self, transform=None, pre_transform=None, pre_filter=None):
-        super().__init__("data/bail", transform, pre_transform, pre_filter)
-        self.data, self.slices = torch.load(self.processed_paths[0])
-
-    @property
-    def raw_file_names(self):
-        return []
-
-    @property
-    def processed_file_names(self):
-        return "bail_modified.pt"
-
-    def process(self):
-        pass
-
-
 bail = BailDataset(transform=transform)
 bail_aware = BailAwareDataset(transform=transform)
 
 try:
-    bail_modified = BailModifiedDataset(transform=transform)
+    bail_node = BailDataset(
+        transform=transform, filename="./data/bail/processed/bail_node.pt"
+    )
 except FileNotFoundError:
-    bail_modified = bail
+    bail_node = bail
 
 bail_link_pred = BailDataset(transform=link_transform)
