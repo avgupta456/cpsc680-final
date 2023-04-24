@@ -1,3 +1,4 @@
+import copy
 import tqdm
 
 import torch
@@ -101,7 +102,7 @@ def train_node_model(model, dataset_name, dataset, optimizer, epochs, debug):
             )
 
         if best_model is None or val_loss < best_model[0]:
-            best_model = (val_loss, val_acc, model.state_dict())
+            best_model = (val_loss, val_acc, copy.deepcopy(model.state_dict()))
 
     print()
 

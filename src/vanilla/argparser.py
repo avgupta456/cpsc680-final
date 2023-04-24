@@ -22,6 +22,8 @@ def add_model_args(argparser):
         default="GCNConv",
         choices=["GCNConv", "GATConv", "SAGEConv", "GINConv"],
     )
+    argparser.add_argument("--type", type=str, default="node", choices=["node", "edge"])
+
     argparser.add_argument("--hidden", type=int, nargs="+", default=[16])
     argparser.add_argument("--dropout", type=float, default=0.0)
 
