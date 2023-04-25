@@ -47,6 +47,10 @@ def load_credit_data(aware):
     random.shuffle(label_idx_0)
     random.shuffle(label_idx_1)
 
+    all_train_idx = np.append(
+        label_idx_0[: int(0.5 * len(label_idx_0))],
+        label_idx_1[: int(0.5 * len(label_idx_1))],
+    )
     train_idx = np.append(
         label_idx_0[: min(int(0.5 * len(label_idx_0)), 6000 // 2)],
         label_idx_1[: min(int(0.5 * len(label_idx_1)), 6000 // 2)],
@@ -59,6 +63,9 @@ def load_credit_data(aware):
         label_idx_0[int(0.75 * len(label_idx_0)) :],
         label_idx_1[int(0.75 * len(label_idx_1)) :],
     )
+
+    all_train_mask = np.zeros(labels.shape, dtype=bool)
+    all_train_mask[all_train_idx] = True
 
     train_mask = np.zeros(labels.shape, dtype=bool)
     train_mask[train_idx] = True
@@ -83,6 +90,7 @@ def load_credit_data(aware):
         edge_index=torch.from_numpy(edges.T).long(),
         y=torch.from_numpy(labels).float(),
         sens_attrs=torch.from_numpy(sens_attrs).bool(),
+        all_train_mask=torch.from_numpy(all_train_mask).bool(),
         train_mask=torch.from_numpy(train_mask).bool(),
         val_mask=torch.from_numpy(val_mask).bool(),
         test_mask=torch.from_numpy(test_mask).bool(),
@@ -141,12 +149,29 @@ class CreditAwareDataset(InMemoryDataset):
 
 credit = CreditDataset(transform=transform)
 credit_aware = CreditAwareDataset(transform=transform)
+credit_link_pred = CreditDataset(transform=link_transform)
 
 try:
     credit_node = CreditDataset(
         transform=transform, filename="./data/credit/processed/credit_node.pt"
     )
+    credit_node_link_pred = CreditDataset(
+        transform=link_transform, filename="./data/credit/processed/credit_node.pt"
+    )
 except FileNotFoundError:
     credit_node = credit
+    credit_node_link_pred = credit_link_pred
 
-credit_link_pred = CreditDataset(transform=link_transform)
+try:
+    credit_edge = CreditDataset(
+        transform=transform, filename="./data/credit/processed/credit_edge.pt"
+    )
+except FileNotFoundError:
+    credit_edge = credit
+
+try:
+    credit_node_edge = CreditDataset(
+        transform=transform, filename="./data/credit/processed/credit_node_edge.pt"
+    )
+except FileNotFoundError:
+    credit_node_edge = credit

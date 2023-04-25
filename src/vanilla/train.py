@@ -8,8 +8,9 @@ if __name__ == "__main__":
         dataset_name,
         model,
         train_model,
+        target_name,
         optimizer,
         epochs,
     ) = parse_args(args)
 
-    train_model(model, dataset_name, dataset, optimizer, epochs, debug)
+    train_model(model, dataset_name, dataset, target_name, optimizer, epochs, debug)

@@ -54,6 +54,10 @@ def load_german_data(aware):
     random.shuffle(label_idx_0)
     random.shuffle(label_idx_1)
 
+    all_train_idx = np.append(
+        label_idx_0[: int(0.5 * len(label_idx_0))],
+        label_idx_1[: int(0.5 * len(label_idx_1))],
+    )
     train_idx = np.append(
         label_idx_0[: min(int(0.5 * len(label_idx_0)), 100 // 2)],
         label_idx_1[: min(int(0.5 * len(label_idx_1)), 100 // 2)],
@@ -66,6 +70,9 @@ def load_german_data(aware):
         label_idx_0[int(0.75 * len(label_idx_0)) :],
         label_idx_1[int(0.75 * len(label_idx_1)) :],
     )
+
+    all_train_mask = np.zeros(labels.shape, dtype=bool)
+    all_train_mask[all_train_idx] = True
 
     train_mask = np.zeros(labels.shape, dtype=bool)
     train_mask[train_idx] = True
@@ -90,6 +97,7 @@ def load_german_data(aware):
         edge_index=torch.from_numpy(edges.T).long(),
         y=torch.from_numpy(labels).float(),
         sens_attrs=torch.from_numpy(sens_attrs).bool(),
+        all_train_mask=torch.from_numpy(all_train_mask).bool(),
         train_mask=torch.from_numpy(train_mask).bool(),
         val_mask=torch.from_numpy(val_mask).bool(),
         test_mask=torch.from_numpy(test_mask).bool(),
@@ -148,12 +156,29 @@ class GermanAwareDataset(InMemoryDataset):
 
 german = GermanDataset(transform=transform)
 german_aware = GermanAwareDataset(transform=transform)
+german_link_pred = GermanDataset(transform=link_transform)
 
 try:
     german_node = GermanDataset(
         transform=transform, filename="./data/german/processed/german_node.pt"
     )
+    german_node_link_pred = GermanDataset(
+        transform=link_transform, filename="./data/german/processed/german_node.pt"
+    )
 except FileNotFoundError:
     german_node = german
+    german_node_link_pred = german_link_pred
 
-german_link_pred = GermanDataset(transform=link_transform)
+try:
+    german_edge = GermanDataset(
+        transform=transform, filename="./data/german/processed/german_edge.pt"
+    )
+except FileNotFoundError:
+    german_edge = german
+
+try:
+    german_node_edge = GermanDataset(
+        transform=transform, filename="./data/german/processed/german_node_edge.pt"
+    )
+except FileNotFoundError:
+    german_node_edge = german

@@ -91,7 +91,9 @@ def run_edge_gnn(model, data, optimizer=None):
     return loss, acc, auc, f1
 
 
-def train_edge_model(model, dataset_name, dataset, optimizer, epochs, debug):
+def train_edge_model(
+    model, dataset_name, dataset, target_name, optimizer, epochs, debug
+):
     print(f"Training {dataset_name} model...")
 
     train_data, val_data, test_data = dataset[0]

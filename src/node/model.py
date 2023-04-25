@@ -42,8 +42,8 @@ class MLP(torch.nn.Module):
 def run_encoder_classifier(
     encoder,
     classifier,
-    data,
-    mask,
+    x,
+    sens,
     classifier_weight,
     l1_rate,
     encoder_optimizer=None,
@@ -58,16 +58,16 @@ def run_encoder_classifier(
         encoder.eval()
         classifier.eval()
 
-    x_hat = encoder(data.x[mask])
+    x_hat = encoder(x)
     sens_hat = classifier(x_hat)
 
     decoder_pred = x_hat
-    decoder_target = data.x[mask]
+    decoder_target = x
     # Decoder wants to reconstruct the input
     decoder_loss = F.mse_loss(decoder_pred, decoder_target)
 
     classifier_pred = sens_hat
-    classifier_target = data.sens_attrs[mask].to(torch.float32)
+    classifier_target = sens
     # Classifier wants to predict the sensitive attributes, encoder wants to hide them
     classifier_loss = F.binary_cross_entropy(
         classifier_pred, classifier_target, weight=classifier_weight
@@ -96,7 +96,7 @@ def run_encoder_classifier(
         classifier_optimizer.step()
 
     classifier_correct = classifier_pred.round().eq(classifier_target).sum().item()
-    classifier_count = mask.sum().item()
+    classifier_count = classifier_target.shape[0]
     classifier_acc = classifier_correct / classifier_count
 
     return encoder_loss, decoder_loss, classifier_loss, classifier_acc
@@ -111,6 +111,7 @@ def train_mlps(
     classifier_optimizer,
     epochs,
     l1_rate,
+    estimate_sens_attrs,
     debug,
 ):
     print(f"Training {dataset_name} encoder-predictor-classifier model...")
@@ -118,14 +119,29 @@ def train_mlps(
     data = dataset[0]
     best_models = None
 
-    sens = data.sens_attrs
-    pos_count = sens[data.train_mask].sum().item()
-    neg_count = sens[data.train_mask].shape[0] - pos_count
+    if estimate_sens_attrs:
+        # Use predicted sensitive attributes (can be inaccurate)
+        train_mask = data.all_train_mask
+        sens_model = torch.load(f"models/{dataset_name}_sens_attr.pt")
+        sens = sens_model(data.x, data.edge_index).unsqueeze(-1).detach()
+    else:
+        # Use ground truth sensitive attributes (fewer labels)
+        train_mask = data.train_mask
+        sens = data.sens_attrs.to(torch.float)
+
+    pos_count = sens[train_mask].sum().item()
+    neg_count = sens[train_mask].shape[0] - pos_count
     pos_weight = (pos_count + neg_count) / pos_count / 2
     neg_weight = (pos_count + neg_count) / neg_count / 2
-    train_classifier_weight = torch.where(sens[data.train_mask], pos_weight, neg_weight)
-    val_classifier_weight = torch.where(sens[data.val_mask], pos_weight, neg_weight)
-    test_classifier_weight = torch.where(sens[data.test_mask], pos_weight, neg_weight)
+    train_classifier_weight = pos_weight * sens[train_mask] + neg_weight * (
+        1 - sens[train_mask]
+    )
+    val_classifier_weight = pos_weight * sens[data.val_mask] + neg_weight * (
+        1 - sens[data.val_mask]
+    )
+    test_classifier_weight = pos_weight * sens[data.test_mask] + neg_weight * (
+        1 - sens[data.test_mask]
+    )
 
     iterator = range(epochs) if debug else tqdm.tqdm(range(epochs))
     for epoch in iterator:
@@ -138,8 +154,8 @@ def train_mlps(
         ) = run_encoder_classifier(
             encoder,
             classifier,
-            data,
-            data.train_mask,
+            data.x[train_mask],
+            sens[train_mask],
             train_classifier_weight,
             l1_rate,
             encoder_optimizer,
@@ -155,8 +171,8 @@ def train_mlps(
         ) = run_encoder_classifier(
             encoder,
             classifier,
-            data,
-            data.val_mask,
+            data.x[data.val_mask],
+            data.sens_attrs.to(torch.float)[data.val_mask],
             val_classifier_weight,
             l1_rate,
         )
@@ -183,8 +199,8 @@ def train_mlps(
     ) = run_encoder_classifier(
         encoder,
         classifier,
-        data,
-        data.test_mask,
+        data.x[data.test_mask],
+        data.sens_attrs.to(torch.float)[data.test_mask],
         test_classifier_weight,
         l1_rate,
     )

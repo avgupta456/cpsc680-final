@@ -58,7 +58,7 @@ class VanillaNode(torch.nn.Module):
         return self.convs[-2](x, edge_index)
 
 
-def run_node_gnn(model, data, mask, optimizer=None):
+def run_node_gnn(model, data, mask, weight, target_name, optimizer=None):
     if optimizer:
         model.train()
         optimizer.zero_grad()
@@ -66,9 +66,12 @@ def run_node_gnn(model, data, mask, optimizer=None):
         model.eval()
 
     out = model(data.x, data.edge_index)[mask]
-    target = data.y[mask]
+    if target_name == "label":
+        target = data.y[mask]
+    elif target_name == "sens_attr":
+        target = data.sens_attrs.squeeze(1)[mask].to(torch.float)
 
-    loss = F.binary_cross_entropy(out, target)
+    loss = F.binary_cross_entropy(out, target, weight=weight)
 
     if optimizer:
         loss.backward()
@@ -83,18 +86,40 @@ def run_node_gnn(model, data, mask, optimizer=None):
     return loss, acc, auc, f1
 
 
-def train_node_model(model, dataset_name, dataset, optimizer, epochs, debug):
+def train_node_model(
+    model, dataset_name, dataset, target_name, optimizer, epochs, debug
+):
     print(f"Training {dataset_name} model...")
 
     data = dataset[0]
     best_model = None
 
+    if target_name == "label":
+        target = data.y.to(torch.bool)
+    elif target_name == "sens_attr":
+        target = data.sens_attrs.squeeze(1)
+
+    pos_count = target[data.train_mask].sum().item()
+    neg_count = target[data.train_mask].shape[0] - pos_count
+    pos_weight = (pos_count + neg_count) / pos_count / 2
+    neg_weight = (pos_count + neg_count) / neg_count / 2
+    train_weight = torch.where(target[data.train_mask], pos_weight, neg_weight)
+    val_weight = torch.where(target[data.val_mask], pos_weight, neg_weight)
+    test_weight = torch.where(target[data.test_mask], pos_weight, neg_weight)
+
     iterator = range(epochs) if debug else tqdm.tqdm(range(epochs))
     for epoch in iterator:
         train_loss, train_acc, _, _ = run_node_gnn(
-            model, data, data.train_mask, optimizer
+            model,
+            data,
+            data.train_mask,
+            train_weight,
+            target_name,
+            optimizer,
         )
-        val_loss, val_acc, val_auc, val_f1 = run_node_gnn(model, data, data.val_mask)
+        val_loss, val_acc, val_auc, val_f1 = run_node_gnn(
+            model, data, data.val_mask, val_weight, target_name
+        )
 
         if debug:
             print(
@@ -107,11 +132,16 @@ def train_node_model(model, dataset_name, dataset, optimizer, epochs, debug):
     print()
 
     model.load_state_dict(best_model[2])
-    loss, acc, auc, f1 = run_node_gnn(model, data, data.test_mask)
+    loss, acc, auc, f1 = run_node_gnn(
+        model, data, data.test_mask, test_weight, target_name
+    )
     print(
         f"Test Loss: {loss:.4f}, Test Acc: {acc:.4f}, Test Auc: {auc:.4f}, Test F1: {f1:.4f}"
     )
     print()
 
     # save model
-    torch.save(model, f"models/{dataset_name}.pt")
+    if target_name == "label":
+        torch.save(model, f"models/{dataset_name}.pt")
+    elif target_name == "sens_attr":
+        torch.save(model, f"models/{dataset_name}_sens_attr.pt")

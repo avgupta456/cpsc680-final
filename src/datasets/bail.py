@@ -44,6 +44,10 @@ def load_bail_data(aware):
     random.shuffle(label_idx_0)
     random.shuffle(label_idx_1)
 
+    all_train_idx = np.append(
+        label_idx_0[: int(0.5 * len(label_idx_0))],
+        label_idx_1[: int(0.5 * len(label_idx_1))],
+    )
     train_idx = np.append(
         label_idx_0[: min(int(0.5 * len(label_idx_0)), 100 // 2)],
         label_idx_1[: min(int(0.5 * len(label_idx_1)), 100 // 2)],
@@ -56,6 +60,9 @@ def load_bail_data(aware):
         label_idx_0[int(0.75 * len(label_idx_0)) :],
         label_idx_1[int(0.75 * len(label_idx_1)) :],
     )
+
+    all_train_mask = np.zeros(labels.shape, dtype=bool)
+    all_train_mask[all_train_idx] = True
 
     train_mask = np.zeros(labels.shape, dtype=bool)
     train_mask[train_idx] = True
@@ -80,6 +87,7 @@ def load_bail_data(aware):
         edge_index=torch.from_numpy(edges.T).long(),
         y=torch.from_numpy(labels).float(),
         sens_attrs=torch.from_numpy(sens_attrs).bool(),
+        all_train_mask=torch.from_numpy(all_train_mask).bool(),
         train_mask=torch.from_numpy(train_mask).bool(),
         val_mask=torch.from_numpy(val_mask).bool(),
         test_mask=torch.from_numpy(test_mask).bool(),
@@ -138,12 +146,29 @@ class BailAwareDataset(InMemoryDataset):
 
 bail = BailDataset(transform=transform)
 bail_aware = BailAwareDataset(transform=transform)
+bail_link_pred = BailDataset(transform=link_transform)
 
 try:
     bail_node = BailDataset(
         transform=transform, filename="./data/bail/processed/bail_node.pt"
     )
+    bail_node_link_pred = BailDataset(
+        transform=link_transform, filename="./data/bail/processed/bail_node.pt"
+    )
 except FileNotFoundError:
     bail_node = bail
+    bail_node_link_pred = bail_link_pred
 
-bail_link_pred = BailDataset(transform=link_transform)
+try:
+    bail_edge = BailDataset(
+        transform=transform, filename="./data/bail/processed/bail_edge.pt"
+    )
+except FileNotFoundError:
+    bail_edge = bail
+
+try:
+    bail_node_edge = BailDataset(
+        transform=transform, filename="./data/bail/processed/bail_node_edge.pt"
+    )
+except FileNotFoundError:
+    bail_node_edge = bail

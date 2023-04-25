@@ -23,14 +23,17 @@ def add_model_args(argparser):
         choices=["GCNConv", "GATConv", "SAGEConv", "GINConv"],
     )
     argparser.add_argument("--type", type=str, default="node", choices=["node", "edge"])
+    argparser.add_argument(
+        "--target_name", type=str, default="label", choices=["label", "sens_attr"]
+    )
 
     argparser.add_argument("--hidden", type=int, nargs="+", default=[16])
     argparser.add_argument("--dropout", type=float, default=0.0)
 
     # Training
-    argparser.add_argument("--epochs", type=int, default=50)
-    argparser.add_argument("--lr", type=float, default=5e-3)
-    argparser.add_argument("--weight_decay", type=float, default=1e-3)
+    argparser.add_argument("--epochs", type=int, default=300)
+    argparser.add_argument("--lr", type=float, default=3e-3)
+    argparser.add_argument("--weight_decay", type=float, default=3e-3)
 
 
 def parse_model_args(args, dataset):
@@ -67,10 +70,12 @@ def parse_model_args(args, dataset):
         ).to(device)
         train_model = train_node_model
 
+    target_name = args.target_name
+
     lr, weight_decay, epochs = args.lr, args.weight_decay, args.epochs
     optimizer = torch.optim.Adam(model.parameters(), lr=lr, weight_decay=weight_decay)
 
-    return model, train_model, optimizer, epochs
+    return model, train_model, target_name, optimizer, epochs
 
 
 def get_args():
@@ -85,7 +90,7 @@ def get_args():
 def parse_args(args):
     debug = parse_misc_args(args)
     dataset, dataset_name = parse_dataset_args(args)
-    model, train_model, optimizer, epochs = parse_model_args(args, dataset)
+    model, train_model, target_name, optimizer, epochs = parse_model_args(args, dataset)
 
     return (
         debug,
@@ -93,6 +98,7 @@ def parse_args(args):
         dataset_name,
         model,
         train_model,
+        target_name,
         optimizer,
         epochs,
     )

@@ -1,7 +1,29 @@
+import argparse
+
 import matplotlib.pyplot as plt
 import torch
 
-from src.argparser import get_args, parse_args
+from src.argparser import (
+    add_dataset_args,
+    add_misc_args,
+    parse_dataset_args,
+    parse_misc_args,
+)
+
+
+def get_args():
+    argparser = argparse.ArgumentParser()
+    add_misc_args(argparser)
+    add_dataset_args(argparser)
+
+    return argparser.parse_args()
+
+
+def parse_args(args):
+    debug = parse_misc_args(args)
+    dataset, dataset_name = parse_dataset_args(args)
+
+    return debug, dataset, dataset_name
 
 
 def histogram(data_arr, label_arr, bins=100, density=True, alpha=0.5):
@@ -18,39 +40,14 @@ def histogram(data_arr, label_arr, bins=100, density=True, alpha=0.5):
     plt.show()
 
 
-def make_plots(edge_prob_1, edge_prob_2, edge_homophily):
-    histogram(
-        [edge_prob_1.detach().numpy(), edge_prob_2.detach().numpy()],
-        ["Edge Model", "Node Model"],
-    )
-
-    # stacked histogram of edge prob 1 for homophily and non-homophily
-    histogram(
-        [
-            edge_prob_1.detach().numpy()[edge_homophily],
-            edge_prob_1.detach().numpy()[~edge_homophily],
-        ],
-        ["Homophily", "Non-Homophily"],
-    )
-
-    # stacked histogram of edge prob 2 for homophily and non-homophily
-    histogram(
-        [
-            edge_prob_2.detach().numpy()[edge_homophily],
-            edge_prob_2.detach().numpy()[~edge_homophily],
-        ],
-        ["Homophily", "Non-Homophily"],
-    )
-
-
 if __name__ == "__main__":
     args = get_args()
-    _, _, dataset_name, dataset, _, _, _ = parse_args(args)
+    debug, dataset, dataset_name = parse_args(args)
 
     plot = False
 
     node_model = torch.load(f"models/{dataset_name}.pt")
-    edge_model = torch.load(f"models/{dataset_name}_edge.pt")
+    edge_model = torch.load(f"models/{dataset_name}_link_pred.pt")
 
     data = dataset[0]
     edge_prob_1 = edge_model(data.x, data.edge_index, data.edge_index).sigmoid()
@@ -60,9 +57,6 @@ if __name__ == "__main__":
 
     sens_attrs = data.sens_attrs.flatten().to(int)
     edge_homophily = sens_attrs[data.edge_index[0]] == sens_attrs[data.edge_index[1]]
-
-    if plot:
-        make_plots(edge_prob_1, edge_prob_2, edge_homophily)
 
     edge_prob = edge_prob_1
 
@@ -74,8 +68,8 @@ if __name__ == "__main__":
     )
 
     dataset_name = args.dataset
-    folder_name = "pokec" if "pokec" in dataset_name else dataset_name
+    folder_name = dataset_name.split("_")[0]
     temp = torch.load(f"data/{folder_name}/processed/{dataset_name}.pt")
     temp[0].edge_index = edge_index
 
-    torch.save(temp, f"data/{folder_name}/processed/{dataset_name}_modified.pt")
+    torch.save(temp, f"data/{folder_name}/processed/{dataset_name}_edge.pt")

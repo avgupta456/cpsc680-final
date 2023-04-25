@@ -5,23 +5,31 @@ from src.node.model import MLP, train_mlps
 
 if __name__ == "__main__":
     args = get_args()
-    debug, dataset, dataset_name = parse_args(args)
+    (
+        debug,
+        dataset,
+        dataset_name,
+        estimate_sens_attrs,
+        encoder_lr,
+        encoder_l1_rate,
+        classifier_lr,
+        classifier_weight_decay,
+        epochs,
+    ) = parse_args(args)
 
     N = dataset.num_features
 
     print("N", N)
 
-    encoder = MLP(N, [], N, 0)
-    classifier = MLP(N, [8, 8], 1, 0.25, True)
+    encoder = MLP(N, [N], N, 0)
+    classifier = MLP(N, [8, 8], 1, 0.125, True)
 
-    encoder_optimizer = torch.optim.Adam(encoder.parameters(), lr=1e-3)
-    l1_rate = 1e-3
+    encoder_optimizer = torch.optim.Adam(encoder.parameters(), lr=encoder_lr)
+    l1_rate = encoder_l1_rate
 
     classifier_optimizer = torch.optim.Adam(
-        classifier.parameters(), lr=3e-3, weight_decay=1e-3
+        classifier.parameters(), lr=classifier_lr, weight_decay=classifier_weight_decay
     )
-
-    epochs = 3000
 
     torch.autograd.set_detect_anomaly(True)
 
@@ -34,6 +42,7 @@ if __name__ == "__main__":
         classifier_optimizer,
         epochs,
         l1_rate,
+        estimate_sens_attrs,
         debug,
     )
 

@@ -48,9 +48,13 @@ def load_pokec_data(suffix, aware):
     label_idx = np.where(labels >= 0)[0]
     random.shuffle(label_idx)
 
+    idx_all_train = label_idx[: int(0.5 * len(label_idx))]
     idx_train = label_idx[: min(int(0.5 * len(label_idx)), 500)]
     idx_val = label_idx[int(0.5 * len(label_idx)) : int(0.75 * len(label_idx))]
     idx_test = label_idx[int(0.75 * len(label_idx)) :]
+
+    all_train_mask = np.zeros(labels.shape, dtype=bool)
+    all_train_mask[idx_all_train] = True
 
     train_mask = np.zeros(labels.shape, dtype=bool)
     train_mask[idx_train] = True
@@ -75,6 +79,7 @@ def load_pokec_data(suffix, aware):
         edge_index=torch.from_numpy(edges.T).long(),
         y=torch.from_numpy(labels).float(),
         sens_attrs=torch.from_numpy(sens_attrs).bool(),
+        all_train_mask=torch.from_numpy(all_train_mask).bool(),
         train_mask=torch.from_numpy(train_mask).bool(),
         val_mask=torch.from_numpy(val_mask).bool(),
         test_mask=torch.from_numpy(test_mask).bool(),
@@ -181,24 +186,61 @@ class PokecNAwareDataset(InMemoryDataset):
 
 pokec_z = PokecZDataset(transform=transform)
 pokec_z_aware = PokecZAwareDataset(transform=transform)
+pokec_z_link_pred = PokecZDataset(transform=link_transform)
 
 try:
     pokec_z_node = PokecZDataset(
         transform=transform, filename="./data/pokec/processed/pokec_z_node.pt"
     )
+    pokec_z_node_link_pred = PokecZDataset(
+        transform=link_transform,
+        filename="./data/pokec/processed/pokec_z_node_link_pred.pt",
+    )
 except FileNotFoundError:
     pokec_z_node = pokec_z
+    pokec_z_node_link_pred = pokec_z_link_pred
 
-pokec_z_link_pred = PokecZDataset(transform=link_transform)
+try:
+    pokec_z_edge = PokecZDataset(
+        transform=link_transform, filename="./data/pokec/processed/pokec_z_edge.pt"
+    )
+except FileNotFoundError:
+    pokec_z_edge = pokec_z
+
+try:
+    pokec_z_node_edge = PokecZDataset(
+        transform=link_transform, filename="./data/pokec/processed/pokec_z_node_edge.pt"
+    )
+except FileNotFoundError:
+    pokec_z_node_edge = pokec_z
+
 
 pokec_n = PokecNDataset(transform=transform)
 pokec_n_aware = PokecNAwareDataset(transform=transform)
+pokec_n_link_pred = PokecNDataset(transform=link_transform)
 
 try:
     pokec_n_node = PokecNDataset(
         transform=transform, filename="./data/pokec/processed/pokec_n_node.pt"
     )
+    pokec_n_node_link_pred = PokecNDataset(
+        transform=link_transform,
+        filename="./data/pokec/processed/pokec_n_node_link_pred.pt",
+    )
 except FileNotFoundError:
     pokec_n_node = pokec_n
+    pokec_n_node_link_pred = pokec_n_link_pred
 
-pokec_n_link_pred = PokecNDataset(transform=link_transform)
+try:
+    pokec_n_edge = PokecNDataset(
+        transform=transform, filename="./data/pokec/processed/pokec_n_edge.pt"
+    )
+except FileNotFoundError:
+    pokec_n_edge = pokec_n
+
+try:
+    pokec_n_node_edge = PokecNDataset(
+        transform=transform, filename="./data/pokec/processed/pokec_n_node_edge.pt"
+    )
+except FileNotFoundError:
+    pokec_n_node_edge = pokec_n
