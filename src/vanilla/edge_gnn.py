@@ -1,3 +1,4 @@
+import copy
 import tqdm
 
 import torch
@@ -7,7 +8,7 @@ import torchmetrics
 from torch_geometric.nn import GCNConv, GATConv, SAGEConv, GINConv
 from torch_geometric.utils import negative_sampling
 
-from src.node_gnn import VanillaNode
+from src.vanilla.node_gnn import VanillaNode
 
 
 class VanillaEdge(torch.nn.Module):
@@ -90,11 +91,7 @@ def run_edge_gnn(model, data, optimizer=None):
     return loss, acc, auc, f1
 
 
-def train_edge_model(model, dataset, optimizer, epochs, debug):
-    dataset_name = dataset.__class__.__name__
-    model_name = repr(model)
-    optimizer_name = optimizer.__class__.__name__
-
+def train_edge_model(model, dataset_name, dataset, optimizer, epochs, debug):
     print(f"Training {dataset_name} model...")
 
     train_data, val_data, test_data = dataset[0]
@@ -111,7 +108,7 @@ def train_edge_model(model, dataset, optimizer, epochs, debug):
             )
 
         if best_model is None or val_loss < best_model[0]:
-            best_model = (val_loss, val_acc, model.state_dict())
+            best_model = (val_loss, val_acc, copy.deepcopy(model.state_dict()))
 
     print()
 
@@ -122,8 +119,5 @@ def train_edge_model(model, dataset, optimizer, epochs, debug):
     )
     print()
 
-    model_name = f"{dataset_name}_{model_name}_{optimizer_name}_{epochs}.pt"
-
     # save model
-    torch.save(model, f"models/{model_name}")
-    print(f"Saved model to models/{model_name}")
+    torch.save(model, f"models/{dataset_name}.pt")

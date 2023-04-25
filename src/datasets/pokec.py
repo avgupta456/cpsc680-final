@@ -4,9 +4,8 @@ import numpy as np
 import pandas as pd
 import torch
 from torch_geometric.data import Data, InMemoryDataset
-import torch_geometric.transforms as T
 
-from src.utils import device
+from src.datasets.shared import transform, link_transform
 
 
 def load_pokec_data(suffix, aware):
@@ -62,9 +61,14 @@ def load_pokec_data(suffix, aware):
     test_mask = np.zeros(labels.shape, dtype=bool)
     test_mask[idx_test] = True
 
+    # Normalize features to range [-1, 1], used in EDITS but leaks data
+    min_values = features.min(axis=0)
+    max_values = features.max(axis=0)
+    features = 2 * (features - min_values) / (max_values - min_values) - 1
+
     # Normalize features to have mean 0 and std 1
-    mean, std = features[train_mask].mean(axis=0), features[train_mask].std(axis=0)
-    features = (features - mean) / std
+    # mean, std = features[train_mask].mean(axis=0), features[train_mask].std(axis=0)
+    # features = (features - mean) / std
 
     data = Data(
         x=torch.from_numpy(features).float(),
@@ -80,9 +84,14 @@ def load_pokec_data(suffix, aware):
 
 
 class PokecZDataset(InMemoryDataset):
-    def __init__(self, transform=None, pre_transform=None, pre_filter=None):
+    def __init__(
+        self, transform=None, pre_transform=None, pre_filter=None, filename=None
+    ):
         super().__init__("data/pokec", transform, pre_transform, pre_filter)
-        self.data, self.slices = torch.load(self.processed_paths[0])
+        if filename is not None:
+            self.data, self.slices = torch.load(filename)
+        else:
+            self.data, self.slices = torch.load(self.processed_paths[0])
 
     @property
     def raw_file_names(self):
@@ -93,15 +102,20 @@ class PokecZDataset(InMemoryDataset):
         return "pokec_z.pt"
 
     def process(self):
-        data: Data = load_pokec_data(suffix="")
+        data: Data = load_pokec_data(suffix="", aware=False)
         data = self.collate([data])
         torch.save(data, self.processed_paths[0])
 
 
 class PokecZAwareDataset(InMemoryDataset):
-    def __init__(self, transform=None, pre_transform=None, pre_filter=None):
+    def __init__(
+        self, transform=None, pre_transform=None, pre_filter=None, filename=None
+    ):
         super().__init__("data/pokec", transform, pre_transform, pre_filter)
-        self.data, self.slices = torch.load(self.processed_paths[0])
+        if filename is not None:
+            self.data, self.slices = torch.load(filename)
+        else:
+            self.data, self.slices = torch.load(self.processed_paths[0])
 
     @property
     def raw_file_names(self):
@@ -118,10 +132,14 @@ class PokecZAwareDataset(InMemoryDataset):
 
 
 class PokecNDataset(InMemoryDataset):
-    def __init__(self, transform=None, pre_transform=None, pre_filter=None):
+    def __init__(
+        self, transform=None, pre_transform=None, pre_filter=None, filename=None
+    ):
         super().__init__("data/pokec", transform, pre_transform, pre_filter)
-
-        self.data, self.slices = torch.load(self.processed_paths[0])
+        if filename is not None:
+            self.data, self.slices = torch.load(filename)
+        else:
+            self.data, self.slices = torch.load(self.processed_paths[0])
 
     @property
     def raw_file_names(self):
@@ -132,16 +150,20 @@ class PokecNDataset(InMemoryDataset):
         return "pokec_n.pt"
 
     def process(self):
-        data: Data = load_pokec_data(suffix="_2")
+        data: Data = load_pokec_data(suffix="_2", aware=False)
         data = self.collate([data])
         torch.save(data, self.processed_paths[0])
 
 
 class PokecNAwareDataset(InMemoryDataset):
-    def __init__(self, transform=None, pre_transform=None, pre_filter=None):
+    def __init__(
+        self, transform=None, pre_transform=None, pre_filter=None, filename=None
+    ):
         super().__init__("data/pokec", transform, pre_transform, pre_filter)
-
-        self.data, self.slices = torch.load(self.processed_paths[0])
+        if filename is not None:
+            self.data, self.slices = torch.load(filename)
+        else:
+            self.data, self.slices = torch.load(self.processed_paths[0])
 
     @property
     def raw_file_names(self):
@@ -157,44 +179,26 @@ class PokecNAwareDataset(InMemoryDataset):
         torch.save(data, self.processed_paths[0])
 
 
-pokec_z = PokecZDataset(transform=T.Compose([T.ToDevice(device), T.ToUndirected()]))
-pokec_z_aware = PokecZAwareDataset(
-    transform=T.Compose([T.ToDevice(device), T.ToUndirected()])
-)
-pokec_z_modified = pokec_z_aware
+pokec_z = PokecZDataset(transform=transform)
+pokec_z_aware = PokecZAwareDataset(transform=transform)
 
-pokec_z_link_pred = PokecZDataset(
-    transform=T.Compose(
-        [
-            T.ToDevice(device),
-            T.ToUndirected(),
-            T.RandomLinkSplit(
-                num_val=0.1,
-                num_test=0.1,
-                is_undirected=True,
-                add_negative_train_samples=False,
-            ),
-        ]
+try:
+    pokec_z_node = PokecZDataset(
+        transform=transform, filename="./data/pokec/processed/pokec_z_node.pt"
     )
-)
+except FileNotFoundError:
+    pokec_z_node = pokec_z
 
-pokec_n = PokecNDataset(transform=T.Compose([T.ToDevice(device), T.ToUndirected()]))
-pokec_n_aware = PokecNAwareDataset(
-    transform=T.Compose([T.ToDevice(device), T.ToUndirected()])
-)
-pokec_n_modified = pokec_n_aware
+pokec_z_link_pred = PokecZDataset(transform=link_transform)
 
-pokec_n_link_pred = PokecNDataset(
-    transform=T.Compose(
-        [
-            T.ToDevice(device),
-            T.ToUndirected(),
-            T.RandomLinkSplit(
-                num_val=0.1,
-                num_test=0.1,
-                is_undirected=True,
-                add_negative_train_samples=False,
-            ),
-        ]
+pokec_n = PokecNDataset(transform=transform)
+pokec_n_aware = PokecNAwareDataset(transform=transform)
+
+try:
+    pokec_n_node = PokecNDataset(
+        transform=transform, filename="./data/pokec/processed/pokec_n_node.pt"
     )
-)
+except FileNotFoundError:
+    pokec_n_node = pokec_n
+
+pokec_n_link_pred = PokecNDataset(transform=link_transform)

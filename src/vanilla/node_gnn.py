@@ -1,3 +1,4 @@
+import copy
 import tqdm
 
 import torch
@@ -56,10 +57,6 @@ class VanillaNode(torch.nn.Module):
 
         return self.convs[-2](x, edge_index)
 
-    def __repr__(self):
-        # Ex. Node_GCNConv(16,32,32,1)
-        return f"Node_{self.block_name}({','.join([str(conv.out_channels) for conv in self.convs])})"
-
 
 def run_node_gnn(model, data, mask, optimizer=None):
     if optimizer:
@@ -69,28 +66,24 @@ def run_node_gnn(model, data, mask, optimizer=None):
         model.eval()
 
     out = model(data.x, data.edge_index)[mask]
-    pred = data.y[mask]
+    target = data.y[mask]
 
-    loss = F.binary_cross_entropy(out, pred)
+    loss = F.binary_cross_entropy(out, target)
 
     if optimizer:
         loss.backward()
         optimizer.step()
 
-    correct = out.round().eq(pred).sum().item()
+    correct = out.round().eq(target).sum().item()
     count = mask.sum().item()
     acc = correct / count
-    auc = torchmetrics.functional.auroc(out, pred.to(int), task="binary")
-    f1 = torchmetrics.functional.f1_score(out, pred.to(int), task="binary")
+    auc = torchmetrics.functional.auroc(out, target.to(int), task="binary")
+    f1 = torchmetrics.functional.f1_score(out, target.to(int), task="binary")
 
     return loss, acc, auc, f1
 
 
-def train_node_model(model, dataset, optimizer, epochs, debug):
-    dataset_name = dataset.__class__.__name__
-    model_name = repr(model)
-    optimizer_name = optimizer.__class__.__name__
-
+def train_node_model(model, dataset_name, dataset, optimizer, epochs, debug):
     print(f"Training {dataset_name} model...")
 
     data = dataset[0]
@@ -109,7 +102,7 @@ def train_node_model(model, dataset, optimizer, epochs, debug):
             )
 
         if best_model is None or val_loss < best_model[0]:
-            best_model = (val_loss, val_acc, model.state_dict())
+            best_model = (val_loss, val_acc, copy.deepcopy(model.state_dict()))
 
     print()
 
@@ -120,8 +113,5 @@ def train_node_model(model, dataset, optimizer, epochs, debug):
     )
     print()
 
-    model_name = f"{dataset_name}_{model_name}_{optimizer_name}_{epochs}.pt"
-
     # save model
-    torch.save(model, f"models/{model_name}")
-    print(f"Saved model to models/{model_name}")
+    torch.save(model, f"models/{dataset_name}.pt")

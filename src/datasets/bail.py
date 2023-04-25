@@ -4,9 +4,8 @@ import numpy as np
 import pandas as pd
 import torch
 from torch_geometric.data import Data, InMemoryDataset
-import torch_geometric.transforms as T
 
-from src.utils import device
+from src.datasets.shared import transform, link_transform
 
 
 def load_bail_data(aware):
@@ -67,7 +66,12 @@ def load_bail_data(aware):
     test_mask = np.zeros(labels.shape, dtype=bool)
     test_mask[test_idx] = True
 
-    # Normalize features to have mean 0 and std 1
+    # Normalize features to range [-1, 1], used in EDITS but leaks data
+    # min_values = features.min(axis=0)
+    # max_values = features.max(axis=0)
+    # features = 2 * (features - min_values) / (max_values - min_values) - 1
+
+    # Normalize features to mean 0 and std 1
     mean, std = features[train_mask].mean(axis=0), features[train_mask].std(axis=0)
     features = (features - mean) / std
 
@@ -85,9 +89,14 @@ def load_bail_data(aware):
 
 
 class BailDataset(InMemoryDataset):
-    def __init__(self, transform=None, pre_transform=None, pre_filter=None):
+    def __init__(
+        self, transform=None, pre_transform=None, pre_filter=None, filename=None
+    ):
         super().__init__("data/bail", transform, pre_transform, pre_filter)
-        self.data, self.slices = torch.load(self.processed_paths[0])
+        if filename is not None:
+            self.data, self.slices = torch.load(filename)
+        else:
+            self.data, self.slices = torch.load(self.processed_paths[0])
 
     @property
     def raw_file_names(self):
@@ -104,9 +113,14 @@ class BailDataset(InMemoryDataset):
 
 
 class BailAwareDataset(InMemoryDataset):
-    def __init__(self, transform=None, pre_transform=None, pre_filter=None):
+    def __init__(
+        self, transform=None, pre_transform=None, pre_filter=None, filename=None
+    ):
         super().__init__("data/bail", transform, pre_transform, pre_filter)
-        self.data, self.slices = torch.load(self.processed_paths[0])
+        if filename is not None:
+            self.data, self.slices = torch.load(filename)
+        else:
+            self.data, self.slices = torch.load(self.processed_paths[0])
 
     @property
     def raw_file_names(self):
@@ -122,23 +136,14 @@ class BailAwareDataset(InMemoryDataset):
         torch.save(data, self.processed_paths[0])
 
 
-bail = BailDataset(transform=T.Compose([T.ToDevice(device), T.ToUndirected()]))
-bail_aware = BailAwareDataset(
-    transform=T.Compose([T.ToDevice(device), T.ToUndirected()])
-)
-bail_modified = bail_aware
+bail = BailDataset(transform=transform)
+bail_aware = BailAwareDataset(transform=transform)
 
-bail_link_pred = BailDataset(
-    transform=T.Compose(
-        [
-            T.ToDevice(device),
-            T.ToUndirected(),
-            T.RandomLinkSplit(
-                num_val=0.1,
-                num_test=0.1,
-                is_undirected=True,
-                add_negative_train_samples=False,
-            ),
-        ]
-    ),
-)
+try:
+    bail_node = BailDataset(
+        transform=transform, filename="./data/bail/processed/bail_node.pt"
+    )
+except FileNotFoundError:
+    bail_node = bail
+
+bail_link_pred = BailDataset(transform=link_transform)

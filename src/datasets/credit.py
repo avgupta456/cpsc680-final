@@ -4,9 +4,8 @@ import numpy as np
 import pandas as pd
 import torch
 from torch_geometric.data import Data, InMemoryDataset
-import torch_geometric.transforms as T
 
-from src.utils import device
+from src.datasets.shared import transform, link_transform
 
 
 def load_credit_data(aware):
@@ -70,6 +69,11 @@ def load_credit_data(aware):
     test_mask = np.zeros(labels.shape, dtype=bool)
     test_mask[test_idx] = True
 
+    # Normalize features to range [-1, 1], used in EDITS but leaks data
+    # min_values = features.min(axis=0)
+    # max_values = features.max(axis=0)
+    # features = 2 * (features - min_values) / (max_values - min_values) - 1
+
     # Normalize features to have mean 0 and std 1
     mean, std = features[train_mask].mean(axis=0), features[train_mask].std(axis=0)
     features = (features - mean) / std
@@ -88,9 +92,14 @@ def load_credit_data(aware):
 
 
 class CreditDataset(InMemoryDataset):
-    def __init__(self, transform=None, pre_transform=None, pre_filter=None):
+    def __init__(
+        self, transform=None, pre_transform=None, pre_filter=None, filename=None
+    ):
         super().__init__("data/credit", transform, pre_transform, pre_filter)
-        self.data, self.slices = torch.load(self.processed_paths[0])
+        if filename is not None:
+            self.data, self.slices = torch.load(filename)
+        else:
+            self.data, self.slices = torch.load(self.processed_paths[0])
 
     @property
     def raw_file_names(self):
@@ -107,9 +116,14 @@ class CreditDataset(InMemoryDataset):
 
 
 class CreditAwareDataset(InMemoryDataset):
-    def __init__(self, transform=None, pre_transform=None, pre_filter=None):
+    def __init__(
+        self, transform=None, pre_transform=None, pre_filter=None, filename=None
+    ):
         super().__init__("data/credit", transform, pre_transform, pre_filter)
-        self.data, self.slices = torch.load(self.processed_paths[0])
+        if filename is not None:
+            self.data, self.slices = torch.load(filename)
+        else:
+            self.data, self.slices = torch.load(self.processed_paths[0])
 
     @property
     def raw_file_names(self):
@@ -125,23 +139,14 @@ class CreditAwareDataset(InMemoryDataset):
         torch.save(data, self.processed_paths[0])
 
 
-credit = CreditDataset(transform=T.Compose([T.ToDevice(device), T.ToUndirected()]))
-credit_aware = CreditAwareDataset(
-    transform=T.Compose([T.ToDevice(device), T.ToUndirected()])
-)
-credit_modified = credit_aware
+credit = CreditDataset(transform=transform)
+credit_aware = CreditAwareDataset(transform=transform)
 
-credit_link_pred = CreditDataset(
-    transform=T.Compose(
-        [
-            T.ToDevice(device),
-            T.ToUndirected(),
-            T.RandomLinkSplit(
-                num_val=0.1,
-                num_test=0.1,
-                is_undirected=True,
-                add_negative_train_samples=False,
-            ),
-        ]
-    ),
-)
+try:
+    credit_node = CreditDataset(
+        transform=transform, filename="./data/credit/processed/credit_node.pt"
+    )
+except FileNotFoundError:
+    credit_node = credit
+
+credit_link_pred = CreditDataset(transform=link_transform)
