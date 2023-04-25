@@ -10,7 +10,7 @@ echo "-----------------------------------------------------"
 echo "Debiasing Edges on Vanilla (Method 1)"
 python -m src.method1 --dataset=$1 --seed=$2
 echo "Training debiased edge label predictor model"
-python -m src.vanilla.train --dataset=$1_node --seed=$2
+python -m src.vanilla.train --dataset=$1_edge --seed=$2
 
 echo "-----------------------------------------------------"
 
