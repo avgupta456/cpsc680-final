@@ -152,11 +152,15 @@ try:
     bail_node = BailDataset(
         transform=transform, filename="./data/bail/processed/bail_node.pt"
     )
+    bail_aware_node = BailAwareDataset(
+        transform=transform, filename="./data/bail/processed/bail_aware_node.pt"
+    )
     bail_node_link_pred = BailDataset(
         transform=link_transform, filename="./data/bail/processed/bail_node.pt"
     )
 except FileNotFoundError:
     bail_node = bail
+    bail_aware_node = bail_aware
     bail_node_link_pred = bail_link_pred
 
 try:

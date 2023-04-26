@@ -192,12 +192,16 @@ try:
     pokec_z_node = PokecZDataset(
         transform=transform, filename="./data/pokec/processed/pokec_z_node.pt"
     )
+    pokec_z_aware_node = PokecZAwareDataset(
+        transform=transform, filename="./data/pokec/processed/pokec_z_aware_node.pt"
+    )
     pokec_z_node_link_pred = PokecZDataset(
         transform=link_transform,
         filename="./data/pokec/processed/pokec_z_node_link_pred.pt",
     )
 except FileNotFoundError:
     pokec_z_node = pokec_z
+    pokec_z_aware_node = pokec_z_aware
     pokec_z_node_link_pred = pokec_z_link_pred
 
 try:
@@ -223,12 +227,16 @@ try:
     pokec_n_node = PokecNDataset(
         transform=transform, filename="./data/pokec/processed/pokec_n_node.pt"
     )
+    pokec_n_aware_node = PokecNAwareDataset(
+        transform=transform, filename="./data/pokec/processed/pokec_n_aware_node.pt"
+    )
     pokec_n_node_link_pred = PokecNDataset(
         transform=link_transform,
         filename="./data/pokec/processed/pokec_n_node_link_pred.pt",
     )
 except FileNotFoundError:
     pokec_n_node = pokec_n
+    pokec_n_aware_node = pokec_n_aware
     pokec_n_node_link_pred = pokec_n_link_pred
 
 try:

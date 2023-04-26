@@ -155,11 +155,15 @@ try:
     credit_node = CreditDataset(
         transform=transform, filename="./data/credit/processed/credit_node.pt"
     )
+    credit_aware_node = CreditAwareDataset(
+        transform=transform, filename="./data/credit/processed/credit_aware_node.pt"
+    )
     credit_node_link_pred = CreditDataset(
         transform=link_transform, filename="./data/credit/processed/credit_node.pt"
     )
 except FileNotFoundError:
     credit_node = credit
+    credit_aware_node = credit_aware
     credit_node_link_pred = credit_link_pred
 
 try:
