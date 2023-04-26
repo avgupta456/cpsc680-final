@@ -28,18 +28,31 @@ def parse_args(args):
 
 # method 2 removes modification ratio % of edges in the german dataset that are most sensitive to noise
 if __name__ == "__main__":
-    # load models
+    # load data and models
     args = get_args()
     debug, dataset, dataset_name = parse_args(args)
 
     node_model = torch.load(f"models/{dataset_name}.pt")
-    node_aware_model = torch.load(f"models/{dataset_name}_aware.pt")
+    data = dataset[0]
+
+    folder_name = dataset_name.split("_")[0]
+
+    if dataset_name.split("_")[-1] == "node":
+        new_dataset_name = "_".join(
+            dataset_name.split("_")[:-1]
+        )  # remove _node from dataset_name
+        node_aware_model = torch.load(f"models/{new_dataset_name}_aware_node.pt")
+        dataset_aware = torch.load(
+            f"data/{folder_name}/processed/{new_dataset_name}_aware_node.pt"
+        )
+    else:
+        node_aware_model = torch.load(f"models/{dataset_name}_aware.pt")
+        dataset_aware = torch.load(
+            f"data/{folder_name}/processed/{dataset_name}_aware.pt"
+        )
+    data_aware = dataset_aware[0]
 
     # get embeddings for each edge from aware and unaware models
-    data = dataset[0]
-    dataset_aware_name = dataset_name.split("_")[0] + "_aware"
-    dataset_aware = eval(dataset_aware_name)
-    data_aware = dataset_aware[0]
     unaware_embeddings = node_model.embedding(data.x, data.edge_index)
     aware_embeddings = node_aware_model.embedding(data_aware.x, data_aware.edge_index)
 
@@ -70,7 +83,7 @@ if __name__ == "__main__":
     folder_name = dataset_name.split("_")[0]
     temp = torch.load(f"data/{folder_name}/processed/{dataset_name}.pt")
     temp[0].edge_index = new_edge_index
-    torch.save(temp, f"data/{folder_name}/processed/{dataset_name}_edge_method2.pt")
+    torch.save(temp, f"data/{folder_name}/processed/{dataset_name}_edge_2.pt")
 
     print(
         f"Removed {data.num_edges - temp[0].num_edges} edges (out of {data.num_edges})"

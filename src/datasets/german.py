@@ -162,23 +162,41 @@ try:
     german_node = GermanDataset(
         transform=transform, filename="./data/german/processed/german_node.pt"
     )
+    german_aware_node = GermanDataset(
+        transform=transform, filename="./data/german/processed/german_aware_node.pt"
+    )
     german_node_link_pred = GermanDataset(
         transform=link_transform, filename="./data/german/processed/german_node.pt"
     )
 except FileNotFoundError:
     german_node = german
+    german_aware_node = german_aware
     german_node_link_pred = german_link_pred
 
 try:
-    german_edge = GermanDataset(
-        transform=transform, filename="./data/german/processed/german_edge.pt"
+    german_edge_1 = GermanDataset(
+        transform=transform, filename="./data/german/processed/german_edge_1.pt"
     )
 except FileNotFoundError:
-    german_edge = german
+    german_edge_1 = german
 
 try:
-    german_node_edge = GermanDataset(
-        transform=transform, filename="./data/german/processed/german_node_edge.pt"
+    german_edge_2 = GermanDataset(
+        transform=transform, filename="./data/german/processed/german_edge_2.pt"
     )
 except FileNotFoundError:
-    german_node_edge = german
+    german_edge_2 = german
+
+try:
+    german_node_edge_1 = GermanDataset(
+        transform=transform, filename="./data/german/processed/german_node_edge_1.pt"
+    )
+except FileNotFoundError:
+    german_node_edge_1 = german
+
+try:
+    german_node_edge_2 = GermanDataset(
+        transform=transform, filename="./data/german/processed/german_node_edge_2.pt"
+    )
+except FileNotFoundError:
+    german_node_edge_2 = german
