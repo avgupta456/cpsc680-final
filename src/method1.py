@@ -40,11 +40,34 @@ def histogram(data_arr, label_arr, bins=100, density=True, alpha=0.5):
     plt.show()
 
 
+def make_plots(edge_prob_1, edge_prob_2, edge_homophily):
+    histogram(
+        [edge_prob_1.detach().numpy(), edge_prob_2.detach().numpy()],
+        ["Edge Model", "Node Model"],
+    )
+
+    # stacked histogram of edge prob 1 for homophily and non-homophily
+    histogram(
+        [
+            edge_prob_1.detach().numpy()[edge_homophily],
+            edge_prob_1.detach().numpy()[~edge_homophily],
+        ],
+        ["Homophily", "Non-Homophily"],
+    )
+
+    # stacked histogram of edge prob 2 for homophily and non-homophily
+    histogram(
+        [
+            edge_prob_2.detach().numpy()[edge_homophily],
+            edge_prob_2.detach().numpy()[~edge_homophily],
+        ],
+        ["Homophily", "Non-Homophily"],
+    )
+
+
 if __name__ == "__main__":
     args = get_args()
     debug, dataset, dataset_name = parse_args(args)
-
-    plot = False
 
     node_model = torch.load(f"models/{dataset_name}.pt")
     edge_model = torch.load(f"models/{dataset_name}_link_pred.pt")
@@ -58,13 +81,17 @@ if __name__ == "__main__":
     sens_attrs = data.sens_attrs.flatten().to(int)
     edge_homophily = sens_attrs[data.edge_index[0]] == sens_attrs[data.edge_index[1]]
 
+    if debug:
+        make_plots(edge_prob_1, edge_prob_2, edge_homophily)
+
     edge_prob = edge_prob_1
 
     # Remove homophily edges with low edge probability
-    edge_index = data.edge_index[:, ~(edge_homophily & (edge_prob < 0.8))]
+    cutoff = edge_prob[edge_homophily].quantile(0.20)
+    edge_index = data.edge_index[:, ~(edge_homophily & (edge_prob < cutoff))]
 
     print(
-        f"Removed {data.edge_index.shape[1] - edge_index.shape[1]} edges (out of {data.edge_index.shape[1]})"
+        f"Removed {data.edge_index.shape[1] - edge_index.shape[1]} edges (out of {data.edge_index.shape[1]}), (cutoff = {cutoff:.2f})"
     )
 
     dataset_name = args.dataset

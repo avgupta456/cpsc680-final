@@ -22,7 +22,7 @@ if __name__ == "__main__":
     print("N", N)
 
     encoder = MLP(N, [N], N, 0)
-    classifier = MLP(N, [8, 8], 1, 0.125, True)
+    classifier = MLP(N, [8, 8], 1, 0.25, True)
 
     encoder_optimizer = torch.optim.Adam(encoder.parameters(), lr=encoder_lr)
     l1_rate = encoder_l1_rate
