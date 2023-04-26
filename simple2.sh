@@ -15,12 +15,12 @@ python -m src.vanilla.train --dataset=$1_edge --seed=$2
 echo "-----------------------------------------------------"
 
 echo "Debiasing Nodes on Vanilla"
-python -m src.node.train --dataset=$1 --estimate_sens_attrs --seed=$2
+python -m src.node.simple --dataset=$1 --estimate_sens_attrs --seed=$2
 echo "Training debiased node label predictor model"
 python -m src.vanilla.train --dataset=$1_node --seed=$2
 
 echo "Debiasing Aware Nodes on Vanilla"
-python -m src.node.train --dataset=$1_aware --seed=$2
+python -m src.node.simple --dataset=$1_aware --seed=$2
 echo "Training aware debiased node label predictor model"
 python -m src.vanilla.train --dataset=$1_aware_node --seed=$2
 

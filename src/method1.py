@@ -99,4 +99,4 @@ if __name__ == "__main__":
     temp = torch.load(f"data/{folder_name}/processed/{dataset_name}.pt")
     temp[0].edge_index = edge_index
 
-    torch.save(temp, f"data/{folder_name}/processed/{dataset_name}_edge_1.pt")
+    torch.save(temp, f"data/{folder_name}/processed/{dataset_name}_edge.pt")

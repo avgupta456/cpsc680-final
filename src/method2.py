@@ -65,14 +65,14 @@ if __name__ == "__main__":
     sens_attrs = data.sens_attrs.flatten().to(int)
     edge_homophily = sens_attrs[data.edge_index[0]] == sens_attrs[data.edge_index[1]]
 
-    cutoff = difference.quantile(0.80)
-    new_edge_index = data.edge_index[:, ~((difference > cutoff))]
+    cutoff = difference[edge_homophily].quantile(0.80)
+    new_edge_index = data.edge_index[:, ~(edge_homophily & (difference > cutoff))]
 
     # save modified dataset
     folder_name = dataset_name.split("_")[0]
     temp = torch.load(f"data/{folder_name}/processed/{dataset_name}.pt")
     temp[0].edge_index = new_edge_index
-    torch.save(temp, f"data/{folder_name}/processed/{dataset_name}_edge_2.pt")
+    torch.save(temp, f"data/{folder_name}/processed/{dataset_name}_edge.pt")
 
     print(
         f"Removed {data.num_edges - temp[0].num_edges} edges (out of {data.num_edges})"
