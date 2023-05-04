@@ -32,9 +32,7 @@ def eval_dataset(data):
     print()
 
 
-def eval_model(data, model):
-    model.eval()
-    output = model(data.x, data.edge_index)
+def eval_model(data, output):
     labels = data.y
     sens = data.sens_attrs.flatten()
 
@@ -67,6 +65,9 @@ if __name__ == "__main__":
 
     try:
         model = torch.load(f"models/{dataset_name}.pt")
-        eval_model(dataset[0], model)
+        model.eval()
+        data = dataset[0]
+        output = model(data.x, data.edge_index)
+        eval_model(data, output)
     except FileNotFoundError:
         print("Model not found. Skipping evaluation.")
