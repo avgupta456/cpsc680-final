@@ -206,14 +206,14 @@ except FileNotFoundError:
 
 try:
     pokec_z_edge = PokecZDataset(
-        transform=link_transform, filename="./data/pokec/processed/pokec_z_edge.pt"
+        transform=transform, filename="./data/pokec/processed/pokec_z_edge.pt"
     )
 except FileNotFoundError:
     pokec_z_edge = pokec_z
 
 try:
     pokec_z_node_edge = PokecZDataset(
-        transform=link_transform, filename="./data/pokec/processed/pokec_z_node_edge.pt"
+        transform=transform, filename="./data/pokec/processed/pokec_z_node_edge.pt"
     )
 except FileNotFoundError:
     pokec_z_node_edge = pokec_z

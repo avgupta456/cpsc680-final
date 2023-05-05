@@ -2,9 +2,6 @@
 
 TIMEFORMAT='It took %R seconds'
 time {
-    echo "Training vanilla label predictor model"
-    python -m src.vanilla.train --dataset=$1 --seed=$2
-
     echo "Training vanilla sensitive attribute classifier model"
     python -m src.vanilla.train --dataset=$1 --target_name=sens_attr --seed=$2
 

@@ -3,7 +3,7 @@
 
 TIMEFORMAT='It took %R seconds'
 time {
-    echo "Training aware vanilla label predictor model"
+    echo "Training unaware vanilla label predictor model"
     python -m src.vanilla.train --dataset=$1 --seed=$2
 }
 

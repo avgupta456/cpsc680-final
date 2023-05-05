@@ -15,7 +15,7 @@ if __name__ == "__main__":
     train_mask = data.train_mask
     sens = data.sens_attrs
 
-    model: VanillaNode = torch.load(f"models/{dataset_name}.pt")
+    model: VanillaNode = torch.load(f"models/{dataset_name}.pt").cpu()
 
     embeddings = model.embedding(data.x, data.edge_index).detach().numpy()
 
