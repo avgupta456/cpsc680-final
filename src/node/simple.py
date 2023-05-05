@@ -8,12 +8,12 @@ if __name__ == "__main__":
     args = get_args()
     (debug, dataset, dataset_name, _, _, _, _, _, _) = parse_args(args)
 
-    train_mask = dataset[0].train_mask
+    train_mask = dataset[0].train_mask.cpu()
 
     x = pd.DataFrame(
-        dataset[0].x, columns=[f"feat_{i}" for i in range(dataset.num_features)]
+        dataset[0].x.cpu(), columns=[f"feat_{i}" for i in range(dataset.num_features)]
     )
-    x["sens_attr"] = dataset[0].sens_attrs
+    x["sens_attr"] = dataset[0].sens_attrs.cpu()
 
     # Can also look into Adversarial Fairness Classifier
     # https://fairlearn.org/v0.8/api_reference/fairlearn.adversarial.html#fairlearn.adversarial.AdversarialFairnessClassifier

@@ -29,8 +29,8 @@ def add_model_args(argparser):
     argparser.add_argument("--dropout", type=float, default=0.0)
 
     # Training
-    argparser.add_argument("--epochs", type=int, default=500)
-    argparser.add_argument("--lr", type=float, default=2e-3)
+    argparser.add_argument("--epochs", type=int, default=100)
+    argparser.add_argument("--lr", type=float, default=3e-3)
     argparser.add_argument("--weight_decay", type=float, default=1e-1)
 
 

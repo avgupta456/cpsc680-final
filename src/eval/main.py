@@ -60,7 +60,7 @@ if __name__ == "__main__":
     args = get_args()
     dataset, dataset_name, debug = parse_args(args)
 
-    eval_dataset(dataset[0])
+    eval_dataset(dataset[0].cpu())
     print()
 
     try:
@@ -68,6 +68,6 @@ if __name__ == "__main__":
         model.eval()
         data = dataset[0]
         output = model(data.x, data.edge_index)
-        eval_model(data, output)
+        eval_model(data.cpu(), output.cpu())
     except FileNotFoundError:
         print("Model not found. Skipping evaluation.")

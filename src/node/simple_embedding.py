@@ -11,7 +11,7 @@ if __name__ == "__main__":
     args = get_args()
     (debug, dataset, dataset_name, _, _, _, _, _, _) = parse_args(args)
 
-    data = dataset[0]
+    data = dataset[0].cpu()
     train_mask = data.train_mask
     sens = data.sens_attrs
 
