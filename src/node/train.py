@@ -1,5 +1,6 @@
 import torch
 
+from src.utils import device
 from src.node.argparser import get_args, parse_args
 from src.node.model import MLP, train_mlps
 
@@ -21,8 +22,8 @@ if __name__ == "__main__":
 
     print("N", N)
 
-    encoder = MLP(N, [N], N, 0)
-    classifier = MLP(N, [8, 8], 1, 0.25, True)
+    encoder = MLP(N, [N], N, 0).to(device)
+    classifier = MLP(N, [8, 8], 1, 0.25, True).to(device)
 
     encoder_optimizer = torch.optim.Adam(encoder.parameters(), lr=encoder_lr)
     l1_rate = encoder_l1_rate
@@ -46,7 +47,7 @@ if __name__ == "__main__":
         debug,
     )
 
-    pred = classifier(encoder(dataset.x))
+    pred = classifier(encoder(dataset[0].x))
     actual = dataset[0].sens_attrs.to(float)
 
     print("Avg Sens Attr Pred (True):", actual[pred > 0.5].mean())
