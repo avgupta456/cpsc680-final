@@ -70,21 +70,21 @@ if __name__ == "__main__":
     debug, dataset, dataset_name = parse_args(args)
 
     node_model = torch.load(f"models/{dataset_name}.pt")
-    edge_model = torch.load(f"models/{dataset_name}_link_pred.pt")
+
+    def decode(self, z, edge_label_index):
+        # NOTE: In logit space
+        x1 = z[edge_label_index[0]]
+        x2 = z[edge_label_index[1]]
+        return (x1 * x2).sum(dim=1)
 
     data = dataset[0]
-    edge_prob_1 = edge_model(data.x, data.edge_index, data.edge_index).sigmoid()
-    edge_prob_2 = edge_model.decode(
-        node_model.embedding(data.x, data.edge_index), data.edge_index
-    ).sigmoid()
+    z = node_model.embedding(data.x, data.edge_index)
+    x1 = z[data.edge_index[0]]
+    x2 = z[data.edge_index[1]]
+    edge_prob = (x1 * x2).sum(dim=1).sigmoid()
 
     sens_attrs = data.sens_attrs.flatten().to(int)
     edge_homophily = sens_attrs[data.edge_index[0]] == sens_attrs[data.edge_index[1]]
-
-    if debug:
-        make_plots(edge_prob_1, edge_prob_2, edge_homophily)
-
-    edge_prob = edge_prob_1
 
     # Remove homophily edges with low edge probability
     cutoff = edge_prob[edge_homophily].quantile(0.20)

@@ -10,7 +10,6 @@ from src.argparser import (
     parse_misc_args,
 )
 from src.utils import device
-from src.vanilla.edge_gnn import VanillaEdge, train_edge_model
 from src.vanilla.node_gnn import VanillaNode, train_node_model
 
 
@@ -22,7 +21,6 @@ def add_model_args(argparser):
         default="SAGEConv",
         choices=["GCNConv", "GATConv", "SAGEConv", "GINConv"],
     )
-    argparser.add_argument("--type", type=str, default="node", choices=["node", "edge"])
     argparser.add_argument(
         "--target_name", type=str, default="label", choices=["label", "sens_attr"]
     )
@@ -52,23 +50,14 @@ def parse_model_args(args, dataset):
     model = None
     train_model = None
 
-    if args.type == "edge":
-        model = VanillaEdge(
-            in_channels=dataset.num_features,
-            hidden_channels=args.hidden,
-            block=block,
-            dropout=args.dropout,
-        ).to(device)
-        train_model = train_edge_model
-    else:
-        model = VanillaNode(
-            in_channels=dataset.num_features,
-            hidden_channels=args.hidden,
-            out_channels=1,
-            block=block,
-            dropout=args.dropout,
-        ).to(device)
-        train_model = train_node_model
+    model = VanillaNode(
+        in_channels=dataset.num_features,
+        hidden_channels=args.hidden,
+        out_channels=1,
+        block=block,
+        dropout=args.dropout,
+    ).to(device)
+    train_model = train_node_model
 
     target_name = args.target_name
 
